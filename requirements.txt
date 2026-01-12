@@ -39,9 +39,9 @@ openpyxl==3.1.5
 xlrd==2.0.1
 xlwt==1.3.0
 
-# Pour la sécurité
+# Pour la sécurité - VERSION MISE À JOUR POUR PYTHON 3.13
 bcrypt==4.2.0
-cryptography==43.0.4
+cryptography==44.0.3  # Version compatible avec Python 3.13
 
 # Pour les dates
 python-dateutil==2.9.0.post0
@@ -55,3 +55,7 @@ pyformance==0.4.2
 # Pour les tests (facultatif pour production)
 pytest==8.3.4
 pytest-flask==1.3.0
+
+# Autres dépendances importantes pour Flask sur Render
+flask-cors==5.0.0
+Flask-Limiter==3.9.0
