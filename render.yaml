@@ -2,20 +2,46 @@ services:
   - type: web
     name: fk-corporate-intelligence
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    runtime: python
+    buildCommand: |
+      pip install -r requirements.txt
+      flask db upgrade
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 4 --threads 2 --timeout 120
+    healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: FLASK_APP
+        value: app.py
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
       - key: DATABASE_URL
         fromDatabase:
           name: fkcorporate-db
           property: connectionString
-      - key: SECRET_KEY
-        generateValue: true
-      - key: FLASK_ENV
-        value: production
-      - key: GMAIL_APP_PASSWORD
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
+    disk:
+      name: uploads
+      mountPath: /var/data
+      sizeGB: 1
+
+  - type: postgres
+    name: fkcorporate-db
+    plan: free
+    databaseName: fkcorporate
+    user: fkcorporate_admin
+
+  # Optionnel: service worker pour les tâches asynchrones
+  - type: worker
+    name: fkcorporate-worker
+    env: python
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python worker.py
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fkcorporate-db
+          property: connectionString
