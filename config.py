@@ -1,33 +1,61 @@
 import os
 from datetime import timedelta
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Charger les variables d'environnement depuis .env
 load_dotenv()
+
+# Déterminer si on est sur Render
+IS_RENDER = 'RENDER' in os.environ
 
 class Config:
     # ============================================================================
     # CONFIGURATIONS DE BASE
     # ============================================================================
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'votre_cle_secrete_super_securisee_changer_en_production'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///controle_interne.db'
+    
+    # Configuration base de données
+    if IS_RENDER and os.environ.get('DATABASE_URL'):
+        # Render utilise PostgreSQL - conversion nécessaire
+        DATABASE_URL = os.environ['DATABASE_URL']
+        if DATABASE_URL.startswith('postgres://'):
+            DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+        SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    else:
+        # Développement local
+        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///controle_interne.db'
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_recycle': 300,
+        'pool_pre_ping': True,
+        'pool_size': 20,
+        'max_overflow': 30
+    }
+    
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
     
     # ============================================================================
     # CONFIGURATIONS DES UPLOADS
     # ============================================================================
-    UPLOAD_FOLDER = 'uploads'
-    UPLOAD_FOLDER_AUDIT = 'uploads/audits'
-    UPLOAD_FOLDER_CONSTATATIONS = 'uploads/constatations'
-    UPLOAD_FOLDER_RECOMMANDATIONS = 'uploads/recommandations'
-    UPLOAD_FOLDER_PLANS = 'uploads/plans_action'
-    UPLOAD_FOLDER_VEILLE = 'static/uploads/veille'
-    UPLOAD_FOLDER_RISQUES = 'uploads/risques'
+    if IS_RENDER:
+        # Sur Render, utiliser le dossier monté
+        BASE_UPLOAD_FOLDER = '/var/data' if os.path.exists('/var/data') else 'uploads'
+    else:
+        BASE_UPLOAD_FOLDER = 'uploads'
+    
+    UPLOAD_FOLDER = BASE_UPLOAD_FOLDER
+    UPLOAD_FOLDER_AUDIT = os.path.join(BASE_UPLOAD_FOLDER, 'audits')
+    UPLOAD_FOLDER_CONSTATATIONS = os.path.join(BASE_UPLOAD_FOLDER, 'constatations')
+    UPLOAD_FOLDER_RECOMMANDATIONS = os.path.join(BASE_UPLOAD_FOLDER, 'recommandations')
+    UPLOAD_FOLDER_PLANS = os.path.join(BASE_UPLOAD_FOLDER, 'plans_action')
+    UPLOAD_FOLDER_VEILLE = os.path.join('static', 'uploads', 'veille')
+    UPLOAD_FOLDER_RISQUES = os.path.join(BASE_UPLOAD_FOLDER, 'risques')
     
     # Extensions autorisées
     ALLOWED_EXTENSIONS = {
-        'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff',
+        'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'webp',
         'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt',
         'csv', 'json', 'xml', 'zip', 'rar', '7z'
     }
@@ -45,6 +73,15 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'contact.fkcorporate@gmail.com')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
     MAIL_DEFAULT_SENDER = ('FK Corporate Intelligence', 'contact.fkcorporate@gmail.com')
+    
+    # ============================================================================
+    # CONFIGURATION SECURITÉ
+    # ============================================================================
+    SESSION_COOKIE_SECURE = IS_RENDER  # HTTPS uniquement sur Render
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    REMEMBER_COOKIE_SECURE = IS_RENDER
+    REMEMBER_COOKIE_HTTPONLY = True
     
     # ============================================================================
     # CONFIGURATIONS AUDIT - STATUTS INTELLIGENTS
@@ -127,6 +164,36 @@ class Config:
     EXPORT_SIGNATURE_ENABLED = True
     
     # ============================================================================
+    # CONFIGURATION POUR RENDER (PERFORMANCE)
+    # ============================================================================
+    if IS_RENDER:
+        # Désactiver le debug
+        DEBUG = False
+        TEMPLATES_AUTO_RELOAD = False
+        
+        # Optimiser les performances
+        JSONIFY_PRETTYPRINT_REGULAR = False
+        SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 an pour les fichiers statiques
+        
+        # Configuration Gunicorn
+        PREFERRED_URL_SCHEME = 'https'
+    else:
+        DEBUG = True
+        TEMPLATES_AUTO_RELOAD = True
+        PREFERRED_URL_SCHEME = 'http'
+    
+    # ============================================================================
+    # CONFIGURATION CACHE
+    # ============================================================================
+    CACHE_TYPE = 'simple'  # Pour production, utiliser 'redis' ou 'memcached'
+    CACHE_DEFAULT_TIMEOUT = 300  # 5 minutes
+    
+    # ============================================================================
+    # CONFIGURATION POUR LES TÂCHES PLANIFIÉES
+    # ============================================================================
+    SCHEDULER_API_ENABLED = False  # Désactiver l'API du scheduler
+    
+    # ============================================================================
     # MÉTHODES UTILITAIRES
     # ============================================================================
     
@@ -145,7 +212,21 @@ class Config:
         
         for folder in folders:
             if not os.path.exists(folder):
-                os.makedirs(folder, exist_ok=True)
+                try:
+                    os.makedirs(folder, exist_ok=True)
+                    print(f"✅ Dossier créé: {folder}")
+                except Exception as e:
+                    print(f"⚠️ Erreur création dossier {folder}: {e}")
+    
+    @staticmethod
+    def get_database_info():
+        """Retourne des informations sur la base de données"""
+        if 'sqlite' in Config.SQLALCHEMY_DATABASE_URI:
+            return "SQLite (développement)"
+        elif 'postgresql' in Config.SQLALCHEMY_DATABASE_URI:
+            return "PostgreSQL (production)"
+        else:
+            return "Base de données inconnue"
     
     @staticmethod
     def print_config_summary():
@@ -153,11 +234,35 @@ class Config:
         print("\n" + "="*60)
         print("📋 RÉSUMÉ DE LA CONFIGURATION")
         print("="*60)
-        print(f"SECRET_KEY: {'✅ Définie' if Config.SECRET_KEY else '❌ Non définie'}")
-        print(f"DATABASE: {Config.SQLALCHEMY_DATABASE_URI}")
+        print(f"ENVIRONNEMENT: {'🎯 PRODUCTION (Render)' if IS_RENDER else '🛠️  DÉVELOPPEMENT'}")
+        print(f"SECRET_KEY: {'✅ Définie' if Config.SECRET_KEY and len(Config.SECRET_KEY) > 20 else '⚠️  Faible ou non définie'}")
+        print(f"DATABASE: {Config.get_database_info()}")
+        print(f"DATABASE_URL: {Config.SQLALCHEMY_DATABASE_URI[:50]}...")
         print(f"MAIL_SERVER: {Config.MAIL_SERVER}")
         print(f"MAIL_PORT: {Config.MAIL_PORT}")
         print(f"MAIL_USERNAME: {Config.MAIL_USERNAME}")
         print(f"MAIL_PASSWORD: {'✅ Définie' if Config.MAIL_PASSWORD else '❌ Non définie'}")
         print(f"MAIL_DEFAULT_SENDER: {Config.MAIL_DEFAULT_SENDER}")
+        print(f"UPLOAD_BASE: {Config.BASE_UPLOAD_FOLDER}")
+        print(f"DEBUG_MODE: {'✅ Activé' if Config.DEBUG else '❌ Désactivé'}")
+        print(f"HTTPS_ENFORCED: {'✅ Oui' if Config.SESSION_COOKIE_SECURE else '❌ Non'}")
         print("="*60)
+    
+    @staticmethod
+    def init_app(app):
+        """Initialise l'application avec cette configuration"""
+        # Créer les dossiers d'upload
+        Config.ensure_upload_folders()
+        
+        # Afficher le résumé
+        Config.print_config_summary()
+        
+        # Configuration supplémentaire si nécessaire
+        if IS_RENDER:
+            print("🚀 Configuration Render détectée")
+            # Forcer HTTPS sur Render
+            app.config['PREFERRED_URL_SCHEME'] = 'https'
+            
+            # Configurer le proxy fix pour Flask
+            from werkzeug.middleware.proxy_fix import ProxyFix
+            app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
