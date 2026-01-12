@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: fk-corporate-intelligence
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fkcorporate-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
