@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        {% if action == 'modifier' %}
+                            <i class="fas fa-edit me-2"></i>Modifier {{ kri.get_type_display() }} : {{ kri.nom }}
+                        {% else %}
+                            <i class="fas fa-plus me-2"></i>Nouvel indicateur
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" 
+                          action="{% if action == 'modifier' %}{{ url_for('modifier_kri', kri_id=kri.id) }}{% else %}{{ url_for('creer_kri_depuis_liste') }}{% endif %}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- Sélection du type d'indicateur -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Type d'indicateur *</label>
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="type_indicateur" id="type_kri" value="kri" 
+                                               {% if (action == 'modifier' and kri.type_indicateur == 'kri') or (not action == 'modifier') %}checked{% endif %}>
+                                        <label class="btn btn-outline-danger" for="type_kri">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>KRI
+                                            <br><small class="text-muted">Indicateur de Risque</small>
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="type_indicateur" id="type_kpi" value="kpi" 
+                                               {% if action == 'modifier' and kri.type_indicateur == 'kpi' %}checked{% endif %}>
+                                        <label class="btn btn-outline-success" for="type_kpi">
+                                            <i class="fas fa-chart-line me-2"></i>KPI
+                                            <br><small class="text-muted">Indicateur de Performance</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label" id="labelAssociation">
+                                        {% if action == 'modifier' %}
+                                            {% if kri.type_indicateur == 'kpi' %}
+                                                Processus ou projet associé (optionnel)
+                                            {% else %}
+                                                Risque associé (recommandé)
+                                            {% endif %}
+                                        {% else %}
+                                            Risque associé (optionnel)
+                                        {% endif %}
+                                    </label>
+                                    <select class="form-select" name="risque_id" id="risqueSelect">
+                                        <option value="">Non associé (indicateur indépendant)</option>
+                                        {% for risque in risques_disponibles %}
+                                            <option value="{{ risque.id }}" 
+                                                    {% if (action == 'modifier' and kri.risque_id == risque.id) or (not action == 'modifier' and risque_id and risque.id == risque_id|int) %}selected{% endif %}>
+                                                {{ risque.reference }} - {{ risque.intitule }}
+                                                {% if risque.is_archived %}[Archivé]{% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">
+                                        <small id="aideAssociation">
+                                            {% if action == 'modifier' and kri.type_indicateur == 'kpi' %}
+                                                Les KPI peuvent être associés à un processus ou projet
+                                            {% else %}
+                                                Les KRI sont généralement associés à un risque, mais peuvent être indépendants
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Informations de base -->
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Nom de l'indicateur *</label>
+                                <input type="text" class="form-control" name="nom" 
+                                       value="{% if action == 'modifier' %}{{ kri.nom }}{% elif risque_id %}{{ risque_associe.reference }} - KRI{% else %}Nouvel indicateur{% endif %}" 
+                                       placeholder="Ex: Taux d'erreur, Niveau de satisfaction client..." required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Unité de mesure</label>
+                                <input type="text" class="form-control" name="unite_mesure" 
+                                       value="{{ kri.unite_mesure if action == 'modifier' else '' }}"
+                                       placeholder="%, €, jours, nombre...">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" rows="3"
+                                      placeholder="Décrivez l'indicateur, son objectif et sa méthode de calcul...">{{ kri.description if action == 'modifier' else '' }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Formule ou méthode de calcul</label>
+                            <textarea class="form-control" name="formule_calcul" rows="2"
+                                      placeholder="Ex: (Nombre d'erreurs / Nombre total de transactions) × 100">{{ kri.formule_calcul if action == 'modifier' else '' }}</textarea>
+                        </div>
+                        
+                        <!-- Paramètres de surveillance -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fréquence de mesure *</label>
+                                <select class="form-select" name="frequence_mesure" required>
+                                    <option value="">Sélectionnez...</option>
+                                    <option value="quotidien" {% if (action == 'modifier' and kri.frequence_mesure == 'quotidien') or (not action == 'modifier' and request.form.get('frequence_mesure') == 'quotidien') %}selected{% endif %}>Quotidien</option>
+                                    <option value="hebdomadaire" {% if (action == 'modifier' and kri.frequence_mesure == 'hebdomadaire') or (not action == 'modifier' and request.form.get('frequence_mesure') == 'hebdomadaire') %}selected{% endif %}>Hebdomadaire</option>
+                                    <option value="mensuel" {% if (action == 'modifier' and kri.frequence_mesure == 'mensuel') or (not action == 'modifier' and (not request.form.get('frequence_mesure') or request.form.get('frequence_mesure') == 'mensuel')) %}selected{% endif %}>Mensuel</option>
+                                    <option value="trimestriel" {% if (action == 'modifier' and kri.frequence_mesure == 'trimestriel') or (not action == 'modifier' and request.form.get('frequence_mesure') == 'trimestriel') %}selected{% endif %}>Trimestriel</option>
+                                    <option value="annuel" {% if (action == 'modifier' and kri.frequence_mesure == 'annuel') or (not action == 'modifier' and request.form.get('frequence_mesure') == 'annuel') %}selected{% endif %}>Annuel</option>
+                                    <option value="ponctuel" {% if (action == 'modifier' and kri.frequence_mesure == 'ponctuel') or (not action == 'modifier' and request.form.get('frequence_mesure') == 'ponctuel') %}selected{% endif %}>Ponctuel</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Responsable de mesure</label>
+                                <select class="form-select" name="responsable_mesure_id">
+                                    <option value="">Sélectionnez un responsable</option>
+                                    {% for user in utilisateurs %}
+                                        <option value="{{ user.id }}" 
+                                                {% if (action == 'modifier' and kri.responsable_mesure_id == user.id) or (not action == 'modifier' and request.form.get('responsable_mesure_id')|int == user.id) %}selected{% endif %}>
+                                            {{ user.username }} ({{ user.role }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Seuils d'alerte -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-bell me-2"></i>Seuils d'alerte
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Sens d'évaluation -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Sens d'évaluation des seuils *</label>
+                                        <select class="form-select" name="sens_evaluation_seuil" id="sensEvaluation" required>
+                                            <option value="superieur" 
+                                                    {% if (action == 'modifier' and kri.sens_evaluation_seuil == 'superieur') or not action == 'modifier' %}selected{% endif %}>
+                                                Risque/sous-performance si valeur > seuil
+                                            </option>
+                                            <option value="inferieur"
+                                                    {% if action == 'modifier' and kri.sens_evaluation_seuil == 'inferieur' %}selected{% endif %}>
+                                                Risque/sous-performance si valeur < seuil
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="alert alert-info mt-4">
+                                            <small>
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                <span id="aideSens">
+                                                    Pour les KRI : valeur élevée = risque élevé<br>
+                                                    Ex: Taux d'erreur, Retards...
+                                                </span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Seuil d'alerte</label>
+                                        <div class="input-group">
+                                            <input type="number" step="0.01" class="form-control" name="seuil_alerte" 
+                                                   value="{{ kri.seuil_alerte if action == 'modifier' and kri.seuil_alerte else request.form.get('seuil_alerte', '') }}"
+                                                   placeholder="0.00">
+                                            <span class="input-group-text" id="uniteAlerte">
+                                                {% if action == 'modifier' and kri.unite_mesure %}
+                                                    {{ kri.unite_mesure }}
+                                                {% elif request.form.get('unite_mesure') %}
+                                                    {{ request.form.get('unite_mesure') }}
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="form-text">
+                                            <small id="texteSeuilAlerte">Déclenche une surveillance renforcée</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Seuil critique</label>
+                                        <div class="input-group">
+                                            <input type="number" step="0.01" class="form-control" name="seuil_critique" 
+                                                   value="{{ kri.seuil_critique if action == 'modifier' and kri.seuil_critique else request.form.get('seuil_critique', '') }}"
+                                                   placeholder="0.00">
+                                            <span class="input-group-text" id="uniteCritique">
+                                                {% if action == 'modifier' and kri.unite_mesure %}
+                                                    {{ kri.unite_mesure }}
+                                                {% elif request.form.get('unite_mesure') %}
+                                                    {{ request.form.get('unite_mesure') }}
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="form-text">
+                                            <small id="texteSeuilCritique">Nécessite une action immédiate</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Visualisation des seuils -->
+                                <div class="alert alert-light mb-0">
+                                    <small class="text-muted d-block mb-2">Interprétation des seuils :</small>
+                                    <div class="row text-center small">
+                                        <div class="col-4">
+                                            <span class="badge bg-success p-2">Normal</span>
+                                            <div class="mt-1" id="zoneNormale">Valeur acceptable</div>
+                                        </div>
+                                        <div class="col-4">
+                                            <span class="badge bg-warning p-2">Alerte</span>
+                                            <div class="mt-1" id="zoneAlerte">Surveillance requise</div>
+                                        </div>
+                                        <div class="col-4">
+                                            <span class="badge bg-danger p-2">Critique</span>
+                                            <div class="mt-1" id="zoneCritique">Action immédiate</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Métadonnées supplémentaires -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-cog me-2"></i>Métadonnées supplémentaires
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Catégorie</label>
+                                        <select class="form-select" name="categorie">
+                                            <option value="">Sélectionnez...</option>
+                                            <option value="operationnel" {% if (action == 'modifier' and kri.categorie == 'operationnel') or request.form.get('categorie') == 'operationnel' %}selected{% endif %}>Opérationnel</option>
+                                            <option value="financier" {% if (action == 'modifier' and kri.categorie == 'financier') or request.form.get('categorie') == 'financier' %}selected{% endif %}>Financier</option>
+                                            <option value="qualite" {% if (action == 'modifier' and kri.categorie == 'qualite') or request.form.get('categorie') == 'qualite' %}selected{% endif %}>Qualité</option>
+                                            <option value="securite" {% if (action == 'modifier' and kri.categorie == 'securite') or request.form.get('categorie') == 'securite' %}selected{% endif %}>Sécurité</option>
+                                            <option value="conformite" {% if (action == 'modifier' and kri.categorie == 'conformite') or request.form.get('categorie') == 'conformite' %}selected{% endif %}>Conformité</option>
+                                            <option value="rh" {% if (action == 'modifier' and kri.categorie == 'rh') or request.form.get('categorie') == 'rh' %}selected{% endif %}>Ressources Humaines</option>
+                                            <option value="technologique" {% if (action == 'modifier' and kri.categorie == 'technologique') or request.form.get('categorie') == 'technologique' %}selected{% endif %}>Technologique</option>
+                                            <option value="autre" {% if (action == 'modifier' and kri.categorie == 'autre') or request.form.get('categorie') == 'autre' %}selected{% endif %}>Autre</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Source de données</label>
+                                        <input type="text" class="form-control" name="source_donnees"
+                                               value="{{ kri.source_donnees if action == 'modifier' else request.form.get('source_donnees', '') }}"
+                                               placeholder="Ex: SAP, Excel, API...">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Notes internes</label>
+                                    <textarea class="form-control" name="notes_internes" rows="2">{{ kri.notes_internes if action == 'modifier' else request.form.get('notes_internes', '') }}</textarea>
+                                    <div class="form-text">
+                                        <small>Informations réservées aux gestionnaires de l'indicateur</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2 justify-content-between">
+                            <div>
+                                {% if action == 'modifier' %}
+                                    <a href="{{ url_for('detail_kri', kri_id=kri.id) }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-1"></i>Annuler
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for('liste_kri') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-1"></i>Annuler
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-2">
+                                {% if action == 'modifier' %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>Enregistrer les modifications
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-plus-circle me-1"></i>Créer l'indicateur
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Éléments DOM
+    const typeKRI = document.getElementById('type_kri');
+    const typeKPI = document.getElementById('type_kpi');
+    const labelAssociation = document.getElementById('labelAssociation');
+    const aideAssociation = document.getElementById('aideAssociation');
+    const sensEvaluation = document.getElementById('sensEvaluation');
+    const aideSens = document.getElementById('aideSens');
+    const texteSeuilAlerte = document.getElementById('texteSeuilAlerte');
+    const texteSeuilCritique = document.getElementById('texteSeuilCritique');
+    const zoneNormale = document.getElementById('zoneNormale');
+    const zoneAlerte = document.getElementById('zoneAlerte');
+    const zoneCritique = document.getElementById('zoneCritique');
+    const uniteMesureInput = document.querySelector('input[name="unite_mesure"]');
+    const uniteAlerte = document.getElementById('uniteAlerte');
+    const uniteCritique = document.getElementById('uniteCritique');
+    
+    // Mise à jour dynamique selon le type d'indicateur
+    function mettreAJourTypeIndicateur() {
+        const typeSelectionne = typeKRI.checked ? 'kri' : 'kpi';
+        
+        // Mettre à jour le label d'association
+        if (typeSelectionne === 'kpi') {
+            labelAssociation.textContent = 'Processus ou projet associé (optionnel)';
+            aideAssociation.textContent = 'Les KPI peuvent être associés à un processus ou projet';
+            texteSeuilAlerte.textContent = 'Indique une sous-performance';
+            texteSeuilCritique.textContent = 'Indique une performance hors cible';
+        } else {
+            labelAssociation.textContent = 'Risque associé (recommandé)';
+            aideAssociation.textContent = 'Les KRI sont généralement associés à un risque, mais peuvent être indépendants';
+            texteSeuilAlerte.textContent = 'Déclenche une surveillance renforcée';
+            texteSeuilCritique.textContent = 'Nécessite une action immédiate';
+        }
+        
+        mettreAJourAideSens();
+        mettreAJourZonesSeuils();
+    }
+    
+    // Mise à jour de l'aide selon le sens d'évaluation
+    function mettreAJourAideSens() {
+        const typeSelectionne = typeKRI.checked ? 'kri' : 'kpi';
+        const sens = sensEvaluation.value;
+        
+        if (typeSelectionne === 'kpi') {
+            if (sens === 'inferieur') {
+                aideSens.innerHTML = 'Pour les KPI où une faible valeur est une sous-performance<br>Ex: Taux de satisfaction, Niveau de service...';
+            } else {
+                aideSens.innerHTML = 'Pour les KPI où une valeur élevée est une sous-performance<br>Ex: Coûts, Délais, Erreurs...';
+            }
+        } else {
+            if (sens === 'inferieur') {
+                aideSens.innerHTML = 'Pour les KRI où une faible valeur est un risque<br>Ex: Niveau de service, Satisfaction client...';
+            } else {
+                aideSens.innerHTML = 'Pour les KRI standard : valeur élevée = risque élevé<br>Ex: Taux d\'erreur, Retards, Coûts...';
+            }
+        }
+    }
+    
+    // Mise à jour des zones de seuils
+    function mettreAJourZonesSeuils() {
+        const typeSelectionne = typeKRI.checked ? 'kri' : 'kpi';
+        const sens = sensEvaluation.value;
+        
+        if (typeSelectionne === 'kpi') {
+            zoneNormale.textContent = sens === 'inferieur' ? 'Valeur ≥ seuil alerte' : 'Valeur ≤ seuil alerte';
+            zoneAlerte.textContent = sens === 'inferieur' ? 'Seuil critique ≤ valeur < seuil alerte' : 'Seuil alerte < valeur ≤ seuil critique';
+            zoneCritique.textContent = sens === 'inferieur' ? 'Valeur < seuil critique' : 'Valeur > seuil critique';
+        } else {
+            zoneNormale.textContent = sens === 'inferieur' ? 'Valeur > seuil alerte' : 'Valeur < seuil alerte';
+            zoneAlerte.textContent = sens === 'inferieur' ? 'Seuil critique < valeur ≤ seuil alerte' : 'Seuil alerte ≤ valeur < seuil critique';
+            zoneCritique.textContent = sens === 'inferieur' ? 'Valeur ≤ seuil critique' : 'Valeur ≥ seuil critique';
+        }
+    }
+    
+    // Mise à jour de l'unité de mesure dans les seuils
+    function mettreAJourUnites() {
+        const unite = uniteMesureInput.value;
+        if (unite) {
+            uniteAlerte.textContent = unite;
+            uniteCritique.textContent = unite;
+        } else {
+            uniteAlerte.textContent = '';
+            uniteCritique.textContent = '';
+        }
+    }
+    
+    // Écouteurs d'événements
+    typeKRI.addEventListener('change', mettreAJourTypeIndicateur);
+    typeKPI.addEventListener('change', mettreAJourTypeIndicateur);
+    sensEvaluation.addEventListener('change', function() {
+        mettreAJourAideSens();
+        mettreAJourZonesSeuils();
+    });
+    uniteMesureInput.addEventListener('input', mettreAJourUnites);
+    
+    // Initialisation
+    mettreAJourTypeIndicateur();
+    mettreAJourUnites();
+    
+    // Validation du formulaire
+    const formulaire = document.querySelector('form');
+    formulaire.addEventListener('submit', function(event) {
+        const nom = document.querySelector('input[name="nom"]').value.trim();
+        const frequence = document.querySelector('select[name="frequence_mesure"]').value;
+        const typeSelectionne = typeKRI.checked ? 'kri' : 'kpi';
+        const risqueId = document.getElementById('risqueSelect').value;
+        
+        let erreurs = [];
+        
+        if (!nom) {
+            erreurs.push('Le nom de l\'indicateur est obligatoire');
+        }
+        
+        if (!frequence) {
+            erreurs.push('La fréquence de mesure est obligatoire');
+        }
+        
+        // Validation spécifique pour les KRI sans risque
+        if (typeSelectionne === 'kri' && !risqueId) {
+            if (!confirm('Vous créez un KRI sans risque associé. Voulez-vous continuer ?')) {
+                event.preventDefault();
+                return;
+            }
+        }
+        
+        if (erreurs.length > 0) {
+            event.preventDefault();
+            alert('Veuillez corriger les erreurs suivantes :\n\n' + erreurs.join('\n'));
+        }
+    });
+    
+    // Initialiser l'unité de mesure si elle existe déjà
+    {% if action == 'modifier' and kri.unite_mesure %}
+        uniteAlerte.textContent = '{{ kri.unite_mesure }}';
+        uniteCritique.textContent = '{{ kri.unite_mesure }}';
+    {% elif request.form.get('unite_mesure') %}
+        uniteAlerte.textContent = '{{ request.form.get('unite_mesure') }}';
+        uniteCritique.textContent = '{{ request.form.get('unite_mesure') }}';
+    {% endif %}
+});
+</script>
+{% endblock %}
