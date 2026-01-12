@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-cogs"></i> Paramétrage des Fiches de Risque
+        </h1>
+    </div>
+
+    <ul class="nav nav-tabs parametrage-tabs" id="parametrageTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="champs-tab" data-bs-toggle="tab" 
+                    data-bs-target="#champs" type="button" role="tab">
+                <i class="fas fa-list me-1"></i>Champs
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="listes-tab" data-bs-toggle="tab" 
+                    data-bs-target="#listes" type="button" role="tab">
+                <i class="fas fa-bars me-1"></i>Listes déroulantes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="fichiers-tab" data-bs-toggle="tab" 
+                    data-bs-target="#fichiers" type="button" role="tab">
+                <i class="fas fa-file me-1"></i>Fichiers
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="export-tab" data-bs-toggle="tab" 
+                    data-bs-target="#export" type="button" role="tab">
+                <i class="fas fa-download me-1"></i>Export/Import
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-4" id="parametrageContent">
+        <!-- Onglet Champs -->
+        <div class="tab-pane fade show active" id="champs" role="tabpanel">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Gestion des champs personnalisés des fiches de risque. 
+                <a href="{{ url_for('parametrage_champs') }}" class="alert-link">Accéder à la gestion des champs →</a>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-question-circle"></i> Guide d'utilisation</h6>
+                        </div>
+                        <div class="card-body">
+                            <h6>Comment configurer les champs :</h6>
+                            <ol class="mb-0">
+                                <li>Définissez le <strong>nom technique</strong> (unique)</li>
+                                <li>Choisissez le <strong>type de champ</strong> approprié</li>
+                                <li>Organisez par <strong>section</strong> pour une meilleure lisibilité</li>
+                                <li>Définissez si le champ est <strong>obligatoire</strong></li>
+                                <li>Utilisez le <strong>glisser-déposer</strong> pour l'ordre d'affichage</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Bonnes pratiques</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                                <li>Utilisez des noms techniques sans espaces</li>
+                                <li>Préférez les <strong>listes déroulantes</strong> pour les choix limités</li>
+                                <li>Ajoutez un <strong>texte d'aide</strong> pour guider l'utilisateur</li>
+                                <li>Testez les champs après leur création</li>
+                                <li>Limitez les champs obligatoires au strict nécessaire</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('parametrage_champs') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-tag me-2"></i>Gérer les champs personnalisés
+                </a>
+            </div>
+        </div>
+        
+        <!-- Onglet Listes déroulantes -->
+        <div class="tab-pane fade" id="listes" role="tabpanel">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Gestion des listes déroulantes utilisées dans les champs de type select, multiselect et radio.
+                <a href="{{ url_for('parametrage_listes') }}" class="alert-link">Accéder à la gestion des listes →</a>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card shadow">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0"><i class="fas fa-list-ol"></i> Types de listes</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded">
+                                        <i class="fas fa-caret-square-down fa-3x text-primary mb-3"></i>
+                                        <h5>Simple</h5>
+                                        <p class="text-muted">Sélection unique</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded">
+                                        <i class="fas fa-list-check fa-3x text-success mb-3"></i>
+                                        <h5>Multiple</h5>
+                                        <p class="text-muted">Sélections multiples</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded">
+                                        <i class="fas fa-dot-circle fa-3x text-info mb-3"></i>
+                                        <h5>Radio</h5>
+                                        <p class="text-muted">Boutons radio</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('parametrage_listes') }}" class="btn btn-warning btn-lg">
+                    <i class="fas fa-bars me-2"></i>Gérer les listes déroulantes
+                </a>
+            </div>
+        </div>
+        
+        <!-- Onglet Fichiers -->
+        <div class="tab-pane fade" id="fichiers" role="tabpanel">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Configuration des paramètres de téléchargement de fichiers et gestion des catégories.
+                <a href="{{ url_for('parametrage_fichiers') }}" class="alert-link">Accéder à la configuration fichiers →</a>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-file-upload"></i> Configuration actuelle</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <th width="50%">Extensions autorisées :</th>
+                                    <td>{{ config_fichiers.extensions|join(', ') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Taille maximale :</th>
+                                    <td>{{ config_fichiers.taille_max_mo }} Mo</td>
+                                </tr>
+                                <tr>
+                                    <th>Catégories disponibles :</th>
+                                    <td>{{ config_fichiers.categories|length }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-shield-alt"></i> Sécurité</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                                <li>Validation des extensions</li>
+                                <li>Contrôle de la taille des fichiers</li>
+                                <li>Nettoyage des noms de fichiers</li>
+                                <li>Stockage sécurisé</li>
+                                <li>Permissions d'accès</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('parametrage_fichiers') }}" class="btn btn-success btn-lg">
+                    <i class="fas fa-file-upload me-2"></i>Gérer les fichiers
+                </a>
+            </div>
+        </div>
+        
+        <!-- Onglet Export/Import -->
+        <div class="tab-pane fade" id="export" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-download"></i> Exporter la configuration</h6>
+                        </div>
+                        <div class="card-body">
+                            <p>Exportez toute la configuration au format JSON pour la sauvegarder ou la transférer.</p>
+                            
+                            <form method="POST" action="{{ url_for('exporter_configuration') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Éléments à exporter :</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               name="export_champs" id="export_champs" checked>
+                                        <label class="form-check-label" for="export_champs">
+                                            Champs de risque
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               name="export_listes" id="export_listes" checked>
+                                        <label class="form-check-label" for="export_listes">
+                                            Listes déroulantes
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               name="export_config_fichiers" id="export_config_fichiers">
+                                        <label class="form-check-label" for="export_config_fichiers">
+                                            Configuration fichiers
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-file-export me-1"></i> Exporter la configuration
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0"><i class="fas fa-upload"></i> Importer une configuration</h6>
+                        </div>
+                        <div class="card-body">
+                            <p>Importez une configuration depuis un fichier JSON.</p>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Attention :</strong> Cette opération écrasera la configuration existante.
+                            </div>
+                            
+                            <form method="POST" action="{{ url_for('importer_configuration') }}" 
+                                  enctype="multipart/form-data" id="formImport">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Fichier JSON :</label>
+                                    <input type="file" class="form-control" name="fichier_config" 
+                                           accept=".json" required id="fileInput">
+                                    <small class="form-text text-muted">
+                                        Sélectionnez un fichier de configuration JSON
+                                    </small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Mode d'import :</label>
+                                    <select class="form-select" name="mode_import" id="modeImport">
+                                        <option value="fusion">Fusionner avec l'existant</option>
+                                        <option value="remplacer">Remplacer l'existant</option>
+                                    </select>
+                                    <small class="form-text text-muted">
+                                        <strong>Fusionner :</strong> Ajoute aux configurations existantes<br>
+                                        <strong>Remplacer :</strong> Supprime tout et importe le nouveau
+                                    </small>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="fas fa-file-import me-1"></i> Importer la configuration
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validation de l'import
+    document.getElementById('formImport').addEventListener('submit', function(e) {
+        const fileInput = document.getElementById('fileInput');
+        const modeSelect = document.getElementById('modeImport');
+        
+        if (fileInput.files.length === 0) {
+            e.preventDefault();
+            alert('Veuillez sélectionner un fichier JSON');
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        if (!file.name.endsWith('.json')) {
+            e.preventDefault();
+            alert('Le fichier doit être au format JSON (.json)');
+            return;
+        }
+        
+        if (modeSelect.value === 'remplacer') {
+            if (!confirm('ATTENTION : Vous allez remplacer TOUTE la configuration existante. Cette action est irréversible. Continuer ?')) {
+                e.preventDefault();
+                return;
+            }
+        }
+    });
+    
+    // Sauvegarde de l'onglet actif
+    const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabEls.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(event) {
+            localStorage.setItem('activeParametrageTab', event.target.id);
+        });
+    });
+    
+    // Restaurer l'onglet actif
+    const activeTabId = localStorage.getItem('activeParametrageTab');
+    if (activeTabId) {
+        const activeTab = document.getElementById(activeTabId);
+        if (activeTab) {
+            const tab = new bootstrap.Tab(activeTab);
+            tab.show();
+        }
+    }
+});
+</script>
+{% endblock %}

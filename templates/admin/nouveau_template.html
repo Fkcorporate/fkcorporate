@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Administration</a></li>
+                    <li class="breadcrumb-item active">Nouveau template</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-2">Nouveau Template de Permissions</h1>
+            <p class="text-muted mb-4">Créez un template de permissions prédéfini</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card card-modern">
+                <div class="card-body">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.name.label }}</label>
+                                {{ form.name(class="form-control") }}
+                                {% if form.name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.name.errors %}
+                                    <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.role.label }}</label>
+                                {{ form.role(class="form-select") }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.description.label }}</label>
+                            {{ form.description(class="form-control", rows=3) }}
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <h5 class="mb-3">Permissions</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Tableau de bord & Rapports</h6>
+                                <div class="mb-3">
+                                    {{ form.can_view_dashboard(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_view_dashboard.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_view_reports(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_view_reports.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_export_data(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_export_data.label.text }}</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Gestion des données</h6>
+                                <div class="mb-3">
+                                    {{ form.can_manage_risks(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_manage_risks.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_manage_kri(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_manage_kri.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_manage_audit(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_manage_audit.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_manage_regulatory(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_manage_regulatory.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_manage_logigram(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_manage_logigram.label.text }}</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Administration générale</h6>
+                                <div class="mb-3">
+                                    {{ form.can_manage_users(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_manage_users.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_manage_settings(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_manage_settings.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_manage_permissions(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_manage_permissions.label.text }}</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Permissions avancées</h6>
+                                <div class="mb-3">
+                                    {{ form.can_delete_data(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_delete_data.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_archive_data(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_archive_data.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_validate_risks(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_validate_risks.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_confirm_evaluations(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_confirm_evaluations.label.text }}</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NOUVELLES PERMISSIONS AJOUTÉES -->
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Veille Règlementaire & Directions</h6>
+                                <div class="mb-3">
+                                    {{ form.can_view_departments(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_view_departments.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_manage_departments(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_manage_departments.label.text }}</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Gestion des utilisateurs</h6>
+                                <div class="mb-3">
+                                    {{ form.can_view_users_list(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_view_users_list.label.text }}</label>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.can_edit_users(class="form-check-input") }}
+                                    <label class="form-check-label ms-2">{{ form.can_edit_users.label.text }}</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <h6 class="mb-3">Permissions d'accès</h6>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        {{ form.can_access_all_departments(class="form-check-input") }}
+                                        <label class="form-check-label ms-2">{{ form.can_access_all_departments.label.text }}</label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        {{ form.can_manage_clients(class="form-check-input") }}
+                                        <label class="form-check-label ms-2">{{ form.can_manage_clients.label.text }}</label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        {{ form.can_provision_servers(class="form-check-input") }}
+                                        <label class="form-check-label ms-2">{{ form.can_provision_servers.label.text }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            {{ form.submit(class="btn btn-modern-primary") }}
+                            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card card-modern">
+                <div class="card-header">
+                    <h5 class="mb-0">Aide</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Rôle par défaut :</strong> Définit le rôle auquel ce template sera automatiquement assigné.</p>
+                    <p><strong>Permissions :</strong> Cochez les cases pour activer les permissions correspondantes.</p>
+                    <p><strong>Exemples :</strong></p>
+                    <ul>
+                        <li><strong>Utilisateur standard :</strong> Voir tableau de bord, consulter rapports, voir directions</li>
+                        <li><strong>Manager :</strong> + Gérer risques, KRI, exporter données, voir liste utilisateurs</li>
+                        <li><strong>Auditeur :</strong> + Gérer audits, plans d'action, voir directions</li>
+                        <li><strong>Admin client :</strong> Toutes les permissions sauf gérer clients/provisionner serveurs</li>
+                        <li><strong>Super Admin :</strong> Toutes les permissions</li>
+                    </ul>
+                    <hr>
+                    <p><strong>Nouvelles permissions :</strong></p>
+                    <ul>
+                        <li><strong>can_view_departments</strong> : Voir les directions et services</li>
+                        <li><strong>can_manage_departments</strong> : Créer/modifier directions et services</li>
+                        <li><strong>can_view_users_list</strong> : Voir la liste des utilisateurs</li>
+                        <li><strong>can_edit_users</strong> : Modifier les utilisateurs (sauf admin client)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

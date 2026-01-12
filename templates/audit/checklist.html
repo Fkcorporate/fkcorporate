@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Checklists d'Audit{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-clipboard-list me-2"></i> Checklists d'Audit</h2>
+        <div>
+            <a href="{{ url_for('liste_audits') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Sélectionner une checklist</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Les checklists pré-définies vous aident à structurer votre audit
+                            avec les points de contrôle standards pour chaque type d'audit.
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="mb-3">
+                                {{ form.type_checklist.label(class="form-label") }}
+                                {{ form.type_checklist(class="form-select") }}
+                                {% for error in form.type_checklist.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">
+                                    Sélectionnez le type d'audit pour lequel vous souhaitez appliquer une checklist
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="mb-3">Options d'application</h6>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check">
+                                        {{ form.appliquer_template(class="form-check-input") }}
+                                        {{ form.appliquer_template.label(class="form-check-label") }}
+                                        <div class="form-text">{{ form.appliquer_template.description }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check">
+                                        {{ form.customiser(class="form-check-input") }}
+                                        {{ form.customiser.label(class="form-check-label") }}
+                                        <div class="form-text">{{ form.customiser.description }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('liste_audits') }}" class="btn btn-outline-secondary">
+                                Annuler
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Zone de prévisualisation dynamique -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Aperçu de la checklist</h5>
+                </div>
+                <div class="card-body" id="previewContent">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-clipboard fa-3x mb-3"></i>
+                        <p>Sélectionnez un type de checklist pour voir un aperçu</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Types de checklists disponibles -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Types de checklists disponibles</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Finance</h6>
+                                    <small class="text-muted">Contrôles financiers, comptabilité, trésorerie</small>
+                                </div>
+                                <span class="badge bg-primary">45 points</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Ressources Humaines</h6>
+                                    <small class="text-muted">Recrutement, formation, paie, conformité sociale</small>
+                                </div>
+                                <span class="badge bg-primary">38 points</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Informatique</h6>
+                                    <small class="text-muted">Sécurité IT, infrastructure, développement</small>
+                                </div>
+                                <span class="badge bg-primary">52 points</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Qualité</h6>
+                                    <small class="text-muted">Processus qualité, certifications, amélioration continue</small>
+                                </div>
+                                <span class="badge bg-primary">41 points</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Sécurité</h6>
+                                    <small class="text-muted">Sécurité physique, incendie, santé au travail</small>
+                                </div>
+                                <span class="badge bg-primary">36 points</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Achats</h6>
+                                    <small class="text-muted">Procédures d'achat, fournisseurs, contrats</small>
+                                </div>
+                                <span class="badge bg-primary">29 points</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Production</h6>
+                                    <small class="text-muted">Processus de production, maintenance, logistique</small>
+                                </div>
+                                <span class="badge bg-primary">47 points</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informations -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Comment utiliser les checklists</h6>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2">
+                            <small>Sélectionnez le type d'audit</small>
+                        </li>
+                        <li class="mb-2">
+                            <small>Choisissez les options d'application</small>
+                        </li>
+                        <li class="mb-2">
+                            <small>La checklist sera appliquée au nouvel audit</small>
+                        </li>
+                        <li>
+                            <small>Personnalisez selon vos besoins spécifiques</small>
+                        </li>
+                    </ol>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <small>
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Les checklists sont des guides. Adaptez-les à votre contexte spécifique.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checklistSelect = document.querySelector('#type_checklist');
+    const previewContent = document.querySelector('#previewContent');
+    
+    // Contenu de prévisualisation par type de checklist
+    const previews = {
+        'finance': `
+            <h6>Checklist Audit Finance</h6>
+            <ul class="mb-0">
+                <li>Comptabilité générale et analytique</li>
+                <li>Contrôles internes financiers</li>
+                <li>Gestion de trésorerie</li>
+                <li>Procédures budgétaires</li>
+                <li>Contrôle des dépenses</li>
+                <li>Gestion des immobilisations</li>
+                <li>Clôtures comptables</li>
+                <li>Conformité fiscale</li>
+            </ul>
+        `,
+        'rh': `
+            <h6>Checklist Audit RH</h6>
+            <ul class="mb-0">
+                <li>Procédures de recrutement</li>
+                <li>Gestion des contrats de travail</li>
+                <li>Administration de la paie</li>
+                <li>Formation et développement</li>
+                <li>Évaluation du personnel</li>
+                <li>Santé et sécurité au travail</li>
+                <li>Conformité sociale</li>
+                <li>Gestion des conflits</li>
+            </ul>
+        `,
+        'it': `
+            <h6>Checklist Audit Informatique</h6>
+            <ul class="mb-0">
+                <li>Sécurité des systèmes d'information</li>
+                <li>Gestion des accès et permissions</li>
+                <li>Sauvegarde et restauration</li>
+                <li>Continuité d'activité</li>
+                <li>Gestion des incidents</li>
+                <li>Contrôle des changements</li>
+                <li>Sécurité des réseaux</li>
+                <li>Protection des données</li>
+            </ul>
+        `,
+        'qualite': `
+            <h6>Checklist Audit Qualité</h6>
+            <ul class="mb-0">
+                <li>Système de management de la qualité</li>
+                <li>Documentation des processus</li>
+                <li>Contrôle des non-conformités</li>
+                <li>Actions correctives et préventives</li>
+                <li>Audits internes</li>
+                <li>Amélioration continue</li>
+                <li>Gestion des risques qualité</li>
+                <li>Mesure de la satisfaction client</li>
+            </ul>
+        `
+    };
+    
+    checklistSelect.addEventListener('change', function() {
+        const selectedType = this.value;
+        
+        if (selectedType && previews[selectedType]) {
+            previewContent.innerHTML = previews[selectedType];
+        } else {
+            previewContent.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-clipboard fa-3x mb-3"></i>
+                    <p>Sélectionnez un type de checklist pour voir un aperçu</p>
+                </div>
+            `;
+        }
+    });
+    
+    // Initialiser l'aperçu
+    checklistSelect.dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}

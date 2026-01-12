@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Préférences de Notifications{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-bell me-2"></i>
+            Préférences de Notifications
+        </h2>
+        <div>
+            <a href="{{ url_for('profil_utilisateur') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Retour au profil
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sliders-h me-2"></i>
+                        Configurer vos notifications
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="alert alert-info mb-4">
+                            <div class="d-flex">
+                                <i class="fas fa-info-circle fa-2x me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">Personnalisez vos notifications</h6>
+                                    <p class="mb-0">Choisissez les types de notifications que vous souhaitez recevoir par email.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="mb-3 border-bottom pb-2">
+                                <i class="fas fa-envelope me-2"></i>
+                                Notifications par Email
+                            </h6>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check form-switch">
+                                        {{ form.email_nouvelle_constatation(class="form-check-input") }}
+                                        {{ form.email_nouvelle_constatation.label(class="form-check-label") }}
+                                        <div class="form-text text-muted">Recevoir un email lorsqu'une nouvelle constatation est créée</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check form-switch">
+                                        {{ form.email_nouvelle_recommandation(class="form-check-input") }}
+                                        {{ form.email_nouvelle_recommandation.label(class="form-check-label") }}
+                                        <div class="form-text text-muted">Recevoir un email lorsqu'une nouvelle recommandation est ajoutée</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check form-switch">
+                                        {{ form.email_nouveau_plan(class="form-check-input") }}
+                                        {{ form.email_nouveau_plan.label(class="form-check-label") }}
+                                        <div class="form-text text-muted">Recevoir un email lorsqu'un nouveau plan d'action est créé</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check form-switch">
+                                        {{ form.email_echeance_7j(class="form-check-input") }}
+                                        {{ form.email_echeance_7j.label(class="form-check-label") }}
+                                        <div class="form-text text-muted">Recevoir un rappel 7 jours avant l'échéance d'un plan</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check form-switch">
+                                        {{ form.email_retard(class="form-check-input") }}
+                                        {{ form.email_retard.label(class="form-check-label") }}
+                                        <div class="form-text text-muted">Recevoir un email lorsqu'un plan est en retard</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check form-switch">
+                                        {{ form.email_validation_requise(class="form-check-input") }}
+                                        {{ form.email_validation_requise.label(class="form-check-label") }}
+                                        <div class="form-text text-muted">Recevoir un email lorsqu'une validation est requise</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="mb-3 border-bottom pb-2">
+                                <i class="fas fa-bell me-2"></i>
+                                Notifications dans l'application
+                            </h6>
+                            <div class="alert alert-light">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success fa-2x me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Activées par défaut</h6>
+                                        <p class="mb-0">Les notifications dans l'application sont toujours actives pour vous tenir informé.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between border-top pt-3">
+                            <a href="{{ url_for('profil_utilisateur') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Enregistrer les préférences
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Informations sur les notifications -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        À propos des notifications
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex">
+                                <i class="fas fa-clock text-primary me-3 mt-1"></i>
+                                <div>
+                                    <h6 class="mb-1">Fréquence</h6>
+                                    <small class="text-muted">Les emails sont envoyés immédiatement après chaque événement</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex">
+                                <i class="fas fa-shield-alt text-success me-3 mt-1"></i>
+                                <div>
+                                    <h6 class="mb-1">Sécurité</h6>
+                                    <small class="text-muted">Vos préférences sont sauvegardées de manière sécurisée</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex">
+                                <i class="fas fa-sync-alt text-warning me-3 mt-1"></i>
+                                <div>
+                                    <h6 class="mb-1">Mises à jour</h6>
+                                    <small class="text-muted">Les modifications sont appliquées instantanément</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <i class="fas fa-history text-info me-3 mt-1"></i>
+                                <div>
+                                    <h6 class="mb-1">Historique</h6>
+                                    <small class="text-muted">Consultez l'historique dans votre tableau de bord</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion des switches
+    const switches = document.querySelectorAll('.form-check-input');
+    
+    switches.forEach(switchEl => {
+        // Sauvegarder l'état initial
+        switchEl.dataset.initialState = switchEl.checked;
+        
+        switchEl.addEventListener('change', function() {
+            const isChanged = this.checked !== (this.dataset.initialState === 'true');
+            
+            if (isChanged) {
+                this.parentElement.classList.add('switch-changed');
+            } else {
+                this.parentElement.classList.remove('switch-changed');
+            }
+            
+            // Mettre à jour le compteur de modifications
+            updateChangesCount();
+        });
+    });
+    
+    function updateChangesCount() {
+        const changedSwitches = Array.from(switches).filter(s => 
+            s.checked !== (s.dataset.initialState === 'true')
+        ).length;
+        
+        // Vous pouvez afficher le nombre de modifications si nécessaire
+        console.log(`${changedSwitches} modifications en attente`);
+    }
+    
+    // Animation des switches
+    switches.forEach(switchEl => {
+        switchEl.addEventListener('change', function() {
+            if (this.checked) {
+                this.parentElement.classList.add('switch-activated');
+            } else {
+                this.parentElement.classList.remove('switch-activated');
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.form-check.form-switch {
+    padding-left: 3em;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 0;
+}
+
+.form-check.form-switch:last-child {
+    border-bottom: none;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.form-check-label {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.form-text {
+    font-size: 0.85em;
+}
+
+.switch-activated .form-check-label {
+    color: #0d6efd;
+}
+
+.switch-changed .form-check-label {
+    font-weight: 600;
+}
+
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.alert-light {
+    background-color: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+}
+
+.btn {
+    border-radius: 6px;
+    padding: 0.5rem 1.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    border: none;
+}
+</style>
+{% endblock %}

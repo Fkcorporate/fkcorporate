@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-plus"></i> Nouveau Service
+    </h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Informations du Service</h5>
+                <small class="text-muted">Direction: {{ direction.nom if direction else 'Non spécifiée' }}</small>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.nom.label(class="form-label") }}
+                        {{ form.nom(class="form-control", placeholder="Nom du service") }}
+                        {% for error in form.nom.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="3", placeholder="Description du service...") }}
+                        {% for error in form.description.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.direction_id.label(class="form-label") }}
+                        {{ form.direction_id(class="form-select") }}
+                        {% for error in form.direction_id.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.responsable_id.label(class="form-label") }}
+                        {{ form.responsable_id(class="form-select") }}
+                        {% for error in form.responsable_id.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                        <small class="form-text text-muted">
+                            Sélectionnez le responsable de ce service
+                        </small>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin_directions') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-arrow-left"></i> Annuler
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Créer le Service
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Information</h6>
+            </div>
+            <div class="card-body">
+                <p>Les services représentent les unités organisationnelles au sein d'une direction.</p>
+                <p><strong>Exemples :</strong></p>
+                <ul>
+                    <li>Service Comptabilité</li>
+                    <li>Service Ressources Humaines</li>
+                    <li>Service Informatique</li>
+                    <li>Service Qualité</li>
+                    <li>Service Juridique</li>
+                </ul>
+                <p>Chaque service peut posséder ses propres cartographies de risques et processus.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

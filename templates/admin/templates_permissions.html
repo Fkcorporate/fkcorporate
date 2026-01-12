@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Administration</a></li>
+                    <li class="breadcrumb-item active">Templates de permissions</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-2">Templates de Permissions</h1>
+            <p class="text-muted mb-4">Gérez les templates de permissions prédéfinis</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-modern">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Liste des templates</h5>
+                    <a href="{{ url_for('admin_nouveau_template') }}" class="btn btn-modern-primary btn-sm">
+                        <i class="fas fa-plus me-2"></i>Nouveau template
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if templates %}
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Description</th>
+                                    <th>Rôle</th>
+                                    <th>Permissions</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for template in templates %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ template.name }}</strong>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ template.description|truncate(100) }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge-modern 
+                                            {% if template.role == 'admin' %}badge-danger
+                                            {% elif template.role == 'manager' %}badge-warning
+                                            {% else %}badge-secondary{% endif %}">
+                                            {{ template.role|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {{ template.permissions.values()|select|list|length }} permissions
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if template.is_default %}
+                                        <span class="badge-modern badge-success">Par défaut</span>
+                                        {% else %}
+                                        <span class="badge-modern badge-secondary">Personnalisé</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('admin_editer_template', id=template.id) }}" 
+                                               class="btn btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-outline-success"
+                                                    onclick="appliquerTemplate({{ template.id }})"
+                                                    title="Appliquer">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            {% if not template.is_default %}
+                                            <button class="btn btn-outline-danger"
+                                                    onclick="supprimerTemplate({{ template.id }})"
+                                                    title="Supprimer">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                        <h5>Aucun template</h5>
+                        <p class="text-muted">Créez votre premier template de permissions</p>
+                        <a href="{{ url_for('admin_nouveau_template') }}" class="btn btn-modern-primary">
+                            <i class="fas fa-plus me-2"></i>Créer un template
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function appliquerTemplate(templateId) {
+    if (confirm('Appliquer ce template à tous les utilisateurs du même rôle ?')) {
+        // À implémenter avec AJAX
+        fetch('/admin/template/' + templateId + '/appliquer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Template appliqué avec succès');
+                location.reload();
+            } else {
+                alert('Erreur : ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erreur réseau');
+        });
+    }
+}
+
+function supprimerTemplate(templateId) {
+    if (confirm('Supprimer ce template ? Cette action est irréversible.')) {
+        window.location.href = '/admin/template/' + templateId + '/supprimer';
+    }
+}
+</script>
+{% endblock %}

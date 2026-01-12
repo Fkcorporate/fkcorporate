@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Administration</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_templates_permissions') }}">Templates</a></li>
+                    <li class="breadcrumb-item active">Éditer {{ template.name }}</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-2">Éditer Template : {{ template.name }}</h1>
+            <p class="text-muted mb-4">Modifiez les permissions du template</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card card-modern">
+                <div class="card-body">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.name.label }}</label>
+                                {{ form.name(class="form-control") }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.role.label }}</label>
+                                {{ form.role(class="form-select") }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.description.label }}</label>
+                            {{ form.description(class="form-control", rows=3) }}
+                        </div>
+                        
+                        <!-- Même formulaire de permissions que nouveau_template.html -->
+                        <!-- Copiez la partie des permissions de nouveau_template.html ici -->
+                        
+                        <div class="mt-4 d-flex justify-content-between">
+                            <div>
+                                {{ form.submit(class="btn btn-modern-primary") }}
+                                <a href="{{ url_for('admin_templates_permissions') }}" class="btn btn-secondary">Annuler</a>
+                            </div>
+                            <a href="{{ url_for('admin_supprimer_template', id=template.id) }}" 
+                               class="btn btn-danger"
+                               onclick="return confirm('Supprimer ce template ?')">
+                                <i class="fas fa-trash me-1"></i>Supprimer
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card card-modern">
+                <div class="card-header">
+                    <h5 class="mb-0">Statistiques</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Créé le :</strong> {{ template.created_at.strftime('%d/%m/%Y') }}</p>
+                    <p><strong>Dernière modification :</strong> {{ template.updated_at.strftime('%d/%m/%Y %H:%M') if template.updated_at else 'Jamais' }}</p>
+                    <p><strong>Permissions activées :</strong> {{ template.permissions.values()|select|list|length }} / 16</p>
+                    <hr>
+                    <p class="small text-muted">Les modifications affecteront tous les utilisateurs utilisant ce template.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

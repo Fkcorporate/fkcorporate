@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Administration</a></li>
+                    <li class="breadcrumb-item active">Journal d'Activité</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-2">Journal d'Activité</h1>
+            <p class="text-muted">Historique des actions des utilisateurs</p>
+        </div>
+    </div>
+
+    <div class="card-modern">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Activités Récentes</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt me-1"></i>Actualiser
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if activites %}
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                        <tr>
+                            <th>Date/Heure</th>
+                            <th>Utilisateur</th>
+                            <th>Action</th>
+                            <th>Description</th>
+                            <th>Entité</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activite in activites %}
+                        <tr>
+                            <td>
+                                <small class="text-muted">{{ activite.date_creation.strftime('%d/%m/%Y') }}</small><br>
+                                <span class="small">{{ activite.date_creation.strftime('%H:%M:%S') }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ activite.utilisateur.username }}</strong><br>
+                                <small class="text-muted">{{ activite.utilisateur.role }}</small>
+                            </td>
+                            <td>
+                                <span class="badge-modern 
+                                    {% if activite.action == 'connexion' %}badge-success
+                                    {% elif activite.action == 'creation' %}badge-primary
+                                    {% elif activite.action == 'modification' %}badge-warning
+                                    {% elif activite.action == 'suppression' %}badge-danger
+                                    {% else %}badge-secondary{% endif %}">
+                                    {{ activite.action|replace('_', ' ')|title }}
+                                </span>
+                            </td>
+                            <td>{{ activite.description }}</td>
+                            <td>
+                                {% if activite.entite_type %}
+                                <span class="small">
+                                    {{ activite.entite_type|title }} 
+                                    {% if activite.entite_id %}#{{ activite.entite_id }}{% endif %}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <code class="small">{{ activite.ip_address }}</code>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                <h5>Aucune activité enregistrée</h5>
+                <p class="text-muted">Le journal d'activité apparaîtra ici</p>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer text-muted small">
+            <i class="fas fa-info-circle me-1"></i>
+            Affichage des 100 dernières activités
+        </div>
+    </div>
+</div>
+{% endblock %}

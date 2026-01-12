@@ -1,0 +1,508 @@
+<!-- templates/admin/parametres_evaluation.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Administration</a></li>
+                    <li class="breadcrumb-item active">Paramètres d'Évaluation</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-2">Paramétrage des Évaluations</h1>
+            <p class="text-muted">Personnalisez les critères d'évaluation et le guide</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <!-- Onglets -->
+            <ul class="nav nav-tabs mb-4" id="parametresTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="impact-tab" data-bs-toggle="tab" data-bs-target="#impact" type="button">
+                        <i class="fas fa-bullseye me-2"></i>Impact
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="probabilite-tab" data-bs-toggle="tab" data-bs-target="#probabilite" type="button">
+                        <i class="fas fa-chart-line me-2"></i>Probabilité
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="maitrise-tab" data-bs-toggle="tab" data-bs-target="#maitrise" type="button">
+                        <i class="fas fa-shield-alt me-2"></i>Maîtrise
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="guide-tab" data-bs-toggle="tab" data-bs-target="#guide" type="button">
+                        <i class="fas fa-book me-2"></i>Guide
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="couleurs-tab" data-bs-toggle="tab" data-bs-target="#couleurs" type="button">
+                        <i class="fas fa-palette me-2"></i>Couleurs
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="parametresTabsContent">
+                
+                <!-- TAB Impact -->
+                <div class="tab-pane fade show active" id="impact" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-bullseye me-2"></i>Paramètres d'Impact</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('admin_save_parametres') }}">
+                                <input type="hidden" name="categorie" value="impact">
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Niveau</th>
+                                                <th>Nom court</th>
+                                                <th>Description longue</th>
+                                                <th>Couleur</th>
+                                                <th>Actif</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for param in parametres_impact %}
+                                            <tr>
+                                                <td class="align-middle">
+                                                    <strong class="h5">{{ param.niveau }}</strong>
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control" 
+                                                           name="nom_court_{{ param.id }}" 
+                                                           value="{{ param.nom_court }}" 
+                                                           required>
+                                                </td>
+                                                <td>
+                                                    <textarea class="form-control" rows="2" 
+                                                              name="description_{{ param.id }}"
+                                                              placeholder="Description détaillée...">{{ param.description_longue or '' }}</textarea>
+                                                </td>
+                                                <td>
+                                                    <div class="input-group">
+                                                        <input type="color" class="form-control form-control-color" 
+                                                               name="couleur_{{ param.id }}"
+                                                               value="{{ param.couleur_hex or '#28a745' }}" 
+                                                               title="Choisir une couleur">
+                                                        <input type="text" class="form-control" 
+                                                               value="{{ param.couleur_hex or '#28a745' }}" 
+                                                               readonly style="max-width: 100px;">
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle text-center">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               name="actif_{{ param.id }}"
+                                                               value="1" {% if param.est_actif %}checked{% endif %}>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="text-end mt-3">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB Probabilité -->
+                <div class="tab-pane fade" id="probabilite" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Paramètres de Probabilité</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('admin_save_parametres') }}">
+                                <input type="hidden" name="categorie" value="probabilite">
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Niveau</th>
+                                                <th>Nom court</th>
+                                                <th>Description longue</th>
+                                                <th>Couleur</th>
+                                                <th>Actif</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for param in parametres_probabilite %}
+                                            <tr>
+                                                <td class="align-middle">
+                                                    <strong class="h5">{{ param.niveau }}</strong>
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control" 
+                                                           name="nom_court_{{ param.id }}" 
+                                                           value="{{ param.nom_court }}" 
+                                                           required>
+                                                </td>
+                                                <td>
+                                                    <textarea class="form-control" rows="2" 
+                                                              name="description_{{ param.id }}"
+                                                              placeholder="Description détaillée...">{{ param.description_longue or '' }}</textarea>
+                                                </td>
+                                                <td>
+                                                    <div class="input-group">
+                                                        <input type="color" class="form-control form-control-color" 
+                                                               name="couleur_{{ param.id }}"
+                                                               value="{{ param.couleur_hex or '#ffc107' }}" 
+                                                               title="Choisir une couleur">
+                                                        <input type="text" class="form-control" 
+                                                               value="{{ param.couleur_hex or '#ffc107' }}" 
+                                                               readonly style="max-width: 100px;">
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle text-center">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               name="actif_{{ param.id }}"
+                                                               value="1" {% if param.est_actif %}checked{% endif %}>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="text-end mt-3">
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB Maîtrise -->
+                <div class="tab-pane fade" id="maitrise" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Paramètres de Maîtrise</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('admin_save_parametres') }}">
+                                <input type="hidden" name="categorie" value="maitrise">
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Niveau</th>
+                                                <th>Nom court</th>
+                                                <th>Description longue</th>
+                                                <th>Couleur</th>
+                                                <th>Actif</th>
+                                                <th>Ordre</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for param in parametres_maitrise %}
+                                            <tr>
+                                                <td class="align-middle">
+                                                    <strong class="h5">{{ param.niveau }}</strong>
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control" 
+                                                           name="nom_court_{{ param.id }}" 
+                                                           value="{{ param.nom_court }}" 
+                                                           required>
+                                                </td>
+                                                <td>
+                                                    <textarea class="form-control" rows="2" 
+                                                              name="description_{{ param.id }}"
+                                                              placeholder="Description détaillée...">{{ param.description_longue or '' }}</textarea>
+                                                </td>
+                                                <td>
+                                                    <div class="input-group">
+                                                        <input type="color" class="form-control form-control-color" 
+                                                               name="couleur_{{ param.id }}"
+                                                               value="{{ param.couleur_hex or '#28a745' }}" 
+                                                               title="Choisir une couleur">
+                                                        <input type="text" class="form-control" 
+                                                               value="{{ param.couleur_hex or '#28a745' }}" 
+                                                               readonly style="max-width: 100px;">
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle text-center">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               name="actif_{{ param.id }}"
+                                                               value="1" {% if param.est_actif %}checked{% endif %}>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control" 
+                                                           name="ordre_{{ param.id }}" 
+                                                           value="{{ param.ordre }}" 
+                                                           min="1" max="5" style="width: 80px;">
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Pour la maîtrise, l'ordre détermine l'affichage : 1 = bas (Insuffisant), 5 = haut (Excellent)
+                                </div>
+                                
+                                <div class="text-end mt-3">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB Guide -->
+                <div class="tab-pane fade" id="guide" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-book me-2"></i>Guide d'Évaluation</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('admin_save_guide') }}">
+                                
+                                {% for section in guide_sections %}
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">{{ section.titre }}</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <input type="hidden" name="section_id_{{ loop.index }}" value="{{ section.id }}">
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Titre</label>
+                                            <input type="text" class="form-control" 
+                                                   name="titre_{{ section.id }}" 
+                                                   value="{{ section.titre }}">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Contenu</label>
+                                            <textarea class="form-control" rows="8" 
+                                                      name="contenu_{{ section.id }}"
+                                                      placeholder="Contenu du guide...">{{ section.contenu or '' }}</textarea>
+                                            <small class="form-text text-muted">
+                                                Vous pouvez utiliser du HTML basique : &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;br&gt;
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" 
+                                                           name="actif_{{ section.id }}"
+                                                           value="1" {% if section.est_actif %}checked{% endif %}>
+                                                    <label class="form-check-label">Section active</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="input-group" style="max-width: 200px;">
+                                                    <span class="input-group-text">Ordre</span>
+                                                    <input type="number" class="form-control" 
+                                                           name="ordre_{{ section.id }}" 
+                                                           value="{{ section.ordre }}" 
+                                                           min="1" max="100">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-info">
+                                        <i class="fas fa-save me-2"></i>Enregistrer le guide
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB Couleurs -->
+                <div class="tab-pane fade" id="couleurs" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <h5 class="mb-0"><i class="fas fa-palette me-2"></i>Personnalisation des Couleurs</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('admin_save_couleurs') }}">
+                                
+                                <div class="row">
+                                    <!-- Couleurs de la matrice -->
+                                    <div class="col-md-6">
+                                        <div class="card mb-4">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Couleurs de la matrice des risques</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Faible (1-4)</label>
+                                                    <div class="input-group">
+                                                        <input type="color" class="form-control form-control-color" 
+                                                               name="couleur_faible"
+                                                               value="{{ couleurs_matrise.faible or '#28a745' }}">
+                                                        <input type="text" class="form-control" 
+                                                               value="{{ couleurs_matrise.faible or '#28a745' }}" 
+                                                               readonly>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label">Moyen (5-10)</label>
+                                                    <div class="input-group">
+                                                        <input type="color" class="form-control form-control-color" 
+                                                               name="couleur_moyen"
+                                                               value="{{ couleurs_matrise.moyen or '#ffc107' }}">
+                                                        <input type="text" class="form-control" 
+                                                               value="{{ couleurs_matrise.moyen or '#ffc107' }}" 
+                                                               readonly>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label">Élevé (11-16)</label>
+                                                    <div class="input-group">
+                                                        <input type="color" class="form-control form-control-color" 
+                                                               name="couleur_eleve"
+                                                               value="{{ couleurs_matrise.eleve or '#fd7e14' }}">
+                                                        <input type="text" class="form-control" 
+                                                               value="{{ couleurs_matrise.eleve or '#fd7e14' }}" 
+                                                               readonly>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label">Critique (17-25)</label>
+                                                    <div class="input-group">
+                                                        <input type="color" class="form-control form-control-color" 
+                                                               name="couleur_critique"
+                                                               value="{{ couleurs_matrise.critique or '#dc3545' }}">
+                                                        <input type="text" class="form-control" 
+                                                               value="{{ couleurs_matrise.critique or '#dc3545' }}" 
+                                                               readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Couleurs des phases -->
+                                    <div class="col-md-6">
+                                        <div class="card mb-4">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Couleurs des phases</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Phase 1 - Pré-évaluation</label>
+                                                    <div class="input-group">
+                                                        <input type="color" class="form-control form-control-color" 
+                                                               name="couleur_phase1"
+                                                               value="{{ couleurs_phases.phase1 or '#007bff' }}">
+                                                        <input type="text" class="form-control" 
+                                                               value="{{ couleurs_phases.phase1 or '#007bff' }}" 
+                                                               readonly>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label">Phase 2 - Validation</label>
+                                                    <div class="input-group">
+                                                        <input type="color" class="form-control form-control-color" 
+                                                               name="couleur_phase2"
+                                                               value="{{ couleurs_phases.phase2 or '#ffc107' }}">
+                                                        <input type="text" class="form-control" 
+                                                               value="{{ couleurs_phases.phase2 or '#ffc107' }}" 
+                                                               readonly>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label">Phase 3 - Confirmation</label>
+                                                    <div class="input-group">
+                                                        <input type="color" class="form-control form-control-color" 
+                                                               name="couleur_phase3"
+                                                               value="{{ couleurs_phases.phase3 or '#28a745' }}">
+                                                        <input type="text" class="form-control" 
+                                                               value="{{ couleurs_phases.phase3 or '#28a745' }}" 
+                                                               readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Enregistrer les couleurs
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mettre à jour les champs texte quand la couleur change
+    document.querySelectorAll('input[type="color"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const textInput = this.closest('.input-group').querySelector('input[type="text"]');
+            textInput.value = this.value;
+        });
+    });
+    
+    // Synchroniser les onglets avec localStorage
+    const tabEl = document.querySelector('#parametresTabs button[data-bs-toggle="tab"]');
+    const tab = new bootstrap.Tab(tabEl);
+    
+    const activeTab = localStorage.getItem('activeParamTab');
+    if (activeTab) {
+        const triggerEl = document.querySelector(`#${activeTab}`);
+        if (triggerEl) {
+            bootstrap.Tab.getInstance(triggerEl).show();
+        }
+    }
+    
+    document.querySelectorAll('#parametresTabs button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function (event) {
+            localStorage.setItem('activeParamTab', event.target.id);
+        });
+    });
+});
+</script>
+{% endblock %}
