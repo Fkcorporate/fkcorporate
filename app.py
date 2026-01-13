@@ -21804,11 +21804,12 @@ def nettoyer_archives():
 @app.route('/cartographie/nouvelle', methods=['GET', 'POST'])
 @login_required
 def nouvelle_cartographie():
-    """Créer une nouvelle cartographie avec notification"""
+    """Créer une nouvelle cartographie avec notification - VERSION MULTI-TENANT"""
     form = CartographieForm()
     
     # Utiliser des valeurs numériques pour les choix
-    directions = [(d.id, d.nom) for d in Direction.query.all()]
+    # FILTRER LES DIRECTIONS PAR CLIENT
+    directions = [(d.id, d.nom) for d in get_client_filter(Direction).all()]
     form.direction_id.choices = [(0, 'Sélectionnez une direction')] + directions
     form.service_id.choices = [(0, 'Sélectionnez un service')]
     
@@ -21828,12 +21829,27 @@ def nouvelle_cartographie():
             flash('Veuillez sélectionner un service pour une cartographie par service', 'error')
             return render_template('cartographie/form.html', form=form)
         
+        # Récupérer la direction pour vérifier l'accès client
+        direction = Direction.query.get(direction_id)
+        if direction and not check_client_access(direction):
+            flash('Accès non autorisé à cette direction', 'error')
+            return redirect(url_for('liste_cartographies'))
+        
+        # Récupérer le service pour vérifier l'accès client (si applicable)
+        if service_id:
+            service = Service.query.get(service_id)
+            if service and not check_client_access(service):
+                flash('Accès non autorisé à ce service', 'error')
+                return redirect(url_for('liste_cartographies'))
+        
+        # Créer la cartographie avec client_id
         cartographie = Cartographie(
             nom=form.nom.data,
             description=form.description.data,
             direction_id=direction_id,
             service_id=service_id,
-            created_by=current_user.id
+            created_by=current_user.id,
+            client_id=current_user.client_id  # IMPORTANT : ajouter le client_id
         )
         
         db.session.add(cartographie)
@@ -21878,6 +21894,8 @@ def nouvelle_cartographie():
         return redirect(url_for('liste_cartographies'))
     
     return render_template('cartographie/form.html', form=form)
+
+
 
 
 @app.route('/kri/nouveau', methods=['GET'])
