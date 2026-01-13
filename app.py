@@ -28459,19 +28459,33 @@ def api_restaurer_logigramme(activite_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
     
-
 @app.route('/editer_logigramme/<int:id>')
 @login_required
 def editer_logigramme(id):
-    activite = ProcessusActivite.query.filter_by(
-        id=id, 
-        created_by=current_user.id,
-        is_archived=False
-    ).first_or_404()
+    # Vérifier d'abord la permission
+    if not current_user.has_permission('can_manage_logigram'):
+        flash('Accès refusé : permission de gérer les logigrammes requise', 'error')
+        return redirect(url_for('liste_logigrammes'))
+    
+    # Obtenir l'activité
+    activite = ProcessusActivite.query.get(id)
+    
+    # Vérifier qu'elle existe
+    if not activite:
+        flash('Logigramme non trouvé', 'error')
+        return redirect(url_for('liste_logigrammes'))
+    
+    # Vérifier l'accès client (isolation multi-tenant)
+    if not check_client_access(activite):
+        flash('Accès non autorisé à ce logigramme', 'error')
+        return redirect(url_for('liste_logigrammes'))
+    
+    # Vérifier qu'il n'est pas archivé
+    if activite.is_archived:
+        flash('Ce logigramme est archivé et ne peut être édité', 'warning')
+        return redirect(url_for('liste_logigrammes'))
     
     return render_template('logigramme/editeur_logigramme.html', activite=activite)
-
-
 
 # Dans app.py, modifiez toutes les routes API comme ceci :
 
