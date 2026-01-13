@@ -79,6 +79,7 @@
             flex-direction: column;
             transition: var(--transition-smooth);
             color: #1E293B;
+            overflow-x: hidden;
         }
 
         [data-bs-theme="dark"] body {
@@ -93,6 +94,7 @@
             box-shadow: var(--shadow-medium);
             padding: 0.75rem 0;
             height: 64px;
+            z-index: 1050;
         }
 
         .navbar-brand-fk {
@@ -118,9 +120,15 @@
             left: 0;
             top: 64px;
             height: calc(100vh - 64px);
-            z-index: 1030;
+            z-index: 1040;
             display: flex;
-            transition: var(--transition-smooth);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 80px;
+        }
+
+        .sidebar-container.mobile-open {
+            transform: translateX(0) !important;
+            z-index: 1060;
         }
 
         /* Sidebar compacte (logos uniquement) */
@@ -134,6 +142,8 @@
             padding: 2rem 0;
             transition: var(--transition-smooth);
             box-shadow: var(--shadow-soft);
+            height: 100%;
+            overflow-y: auto;
         }
 
         /* Sidebar étendue (avec textes) */
@@ -145,6 +155,11 @@
             box-shadow: var(--shadow-soft);
             overflow-y: auto;
             padding: 2rem 0;
+            height: 100%;
+            position: absolute;
+            left: 80px;
+            top: 0;
+            z-index: 1050;
         }
 
         .sidebar-expanded.hidden {
@@ -333,10 +348,12 @@
             background: var(--fk-platinum);
             transition: var(--transition-smooth);
             color: #1E293B;
+            width: calc(100% - 80px);
         }
 
         .main-content.expanded {
             margin-left: 280px;
+            width: calc(100% - 280px);
         }
 
         /* ========== CARTES CORPORATE ========== */
@@ -590,43 +607,259 @@
             color: #3B82F6;
         }
 
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 992px) {
+        /* ========== VERSION MOBILE OPTIMISÉE ========== */
+        @media (max-width: 991.98px) {
+            /* Sidebar prend tout l'écran sur mobile */
             .sidebar-container {
-                position: fixed;
+                width: 280px;
                 transform: translateX(-100%);
-                z-index: 1040;
+                transition: transform 0.3s ease;
+                top: 0;
+                height: 100vh;
+                z-index: 1060;
             }
             
             .sidebar-container.mobile-open {
                 transform: translateX(0);
+                box-shadow: var(--shadow-hard);
             }
             
-            .main-content {
-                margin-left: 0 !important;
-                padding: 1rem;
+            /* Sidebar compacte cachée sur mobile */
+            .sidebar-compact {
+                display: none !important;
             }
             
+            /* Sidebar étendue pleine largeur sur mobile */
+            .sidebar-expanded {
+                width: 100%;
+                left: 0;
+                top: 0;
+                display: block !important;
+                padding-top: 4rem;
+                z-index: 1061;
+            }
+            
+            /* Masquer le bouton desktop */
             .sidebar-navbar-control {
                 display: none !important;
             }
             
-            .mobile-sidebar-toggle {
-                display: flex !important;
-            }
-        }
-
-        @media (max-width: 768px) {
+            /* Main content plein écran */
             .main-content {
+                margin-left: 0 !important;
+                width: 100%;
                 padding: 1rem;
+                transition: none;
             }
             
+            .main-content.expanded {
+                margin-left: 0 !important;
+                width: 100%;
+            }
+            
+            /* Ajustements navbar */
+            .navbar-brand-fk span {
+                font-size: 1.2rem;
+            }
+            
+            .navbar-nav .nav-link span:not(.vue-client-label) {
+                display: none;
+            }
+            
+            /* Menu utilisateur mobile optimisé */
+            .navbar-nav .dropdown-toggle::after {
+                display: none;
+            }
+            
+            /* Cartes responsives */
             .fk-card {
                 margin-bottom: 1rem;
             }
             
-            .navbar-nav .dropdown-menu {
-                position: absolute !important;
+            .fk-card-body {
+                padding: 1rem;
+            }
+            
+            /* Table responsive */
+            .fk-table {
+                font-size: 0.9rem;
+            }
+            
+            .fk-table th,
+            .fk-table td {
+                padding: 0.75rem 0.5rem;
+            }
+            
+            /* Overlay pour mobile */
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(3px);
+                z-index: 1059;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+            
+            .sidebar-overlay.show {
+                opacity: 1;
+                visibility: visible;
+            }
+            
+            /* Bouton toggle mobile amélioré */
+            .mobile-sidebar-toggle {
+                position: fixed;
+                bottom: 2rem;
+                right: 2rem;
+                width: 56px;
+                height: 56px;
+                background: var(--accent-gradient);
+                border-radius: 50%;
+                color: white;
+                border: none;
+                box-shadow: var(--shadow-hard);
+                z-index: 1050;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                transition: var(--transition-smooth);
+            }
+            
+            .mobile-sidebar-toggle:hover {
+                transform: scale(1.1);
+            }
+            
+            /* Header mobile dans sidebar */
+            .mobile-sidebar-header {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: var(--primary-gradient);
+                color: white;
+                padding: 1rem 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                z-index: 1062;
+            }
+            
+            .mobile-sidebar-header h5 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+            }
+            
+            .mobile-sidebar-close {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.3rem;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                transition: var(--transition-smooth);
+            }
+            
+            .mobile-sidebar-close:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            
+            /* Cacher le bouton close desktop */
+            .sidebar-close-control {
+                display: none;
+            }
+            
+            /* Ajustement pour les sections de menu */
+            .sidebar-section {
+                margin-bottom: 1.5rem;
+            }
+            
+            .sidebar-menu-expanded {
+                padding: 0 1rem;
+                margin-top: 1rem;
+            }
+            
+            /* Notifications mobile */
+            .dropdown-menu[aria-labelledby="notificationsDropdown"] {
+                position: fixed !important;
+                top: 60px !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                width: 90% !important;
+                max-width: 400px;
+                max-height: 60vh;
+            }
+            
+            /* Informations utilisateur dans sidebar mobile */
+            .mobile-user-info {
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid #e2e8f0;
+                margin-bottom: 1rem;
+                background: var(--fk-platinum);
+            }
+            
+            [data-bs-theme="dark"] .mobile-user-info {
+                border-bottom-color: #334155;
+            }
+            
+            .mobile-user-info .user-role {
+                font-size: 0.85rem;
+                color: var(--fk-accent);
+                font-weight: 500;
+            }
+            
+            .mobile-user-info .user-client {
+                font-size: 0.8rem;
+                color: var(--fk-steel);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 0.75rem;
+            }
+            
+            .fk-card-header {
+                padding: 1rem;
+            }
+            
+            .navbar-brand-fk span {
+                font-size: 1rem;
+            }
+            
+            .navbar-brand-fk i {
+                font-size: 1.2rem;
+            }
+            
+            /* Boutons plus petits sur mobile */
+            .fk-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+            
+            /* Formulaires */
+            .fk-form-control {
+                padding: 0.6rem 0.75rem;
+                font-size: 0.9rem;
+            }
+            
+            /* Footer mobile */
+            footer .col-md-6 {
+                text-align: center !important;
+                margin-bottom: 0.5rem;
+            }
+            
+            footer .row {
+                flex-direction: column;
             }
         }
 
@@ -698,46 +931,11 @@
             transition: var(--transition-smooth);
         }
 
-        /* Bouton toggle sidebar mobile */
+        /* Bouton toggle sidebar mobile (version desktop cachée) */
         .mobile-sidebar-toggle {
             display: none;
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            width: 56px;
-            height: 56px;
-            background: var(--accent-gradient);
-            border-radius: 50%;
-            color: white;
-            border: none;
-            box-shadow: var(--shadow-hard);
-            z-index: 1050;
-            transition: var(--transition-smooth);
-            align-items: center;
-            justify-content: center;
         }
 
-        .mobile-sidebar-toggle:hover {
-            transform: scale(1.1);
-        }
-
-        /* Overlay pour mobile */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1039;
-            backdrop-filter: blur(2px);
-        }
-
-        .sidebar-overlay.show {
-            display: block;
-        }
-        
         /* Style pour le bouton de fermeture dans la sidebar étendue */
         .sidebar-close-control {
             position: absolute;
@@ -851,7 +1049,7 @@
     <!-- Navigation Principale -->
     <nav class="navbar navbar-expand-lg navbar-fk navbar-dark sticky-top">
         <div class="container-fluid">
-            <!-- Bouton burger pour sidebar -->
+            <!-- Bouton burger pour sidebar desktop -->
             <button class="sidebar-navbar-control d-none d-lg-flex" id="navbarSidebarToggle" title="Ouvrir le menu complet">
                 <i class="fas fa-bars"></i>
             </button>
@@ -863,7 +1061,7 @@
             </a>
 
             <!-- Bouton toggle mobile -->
-            <button class="btn d-lg-none me-2 text-white" type="button" id="mobileToggle">
+            <button class="btn d-lg-none me-2 text-white" type="button" id="mobileToggle" aria-label="Ouvrir le menu">
                 <i class="fas fa-bars"></i>
             </button>
 
@@ -1242,6 +1440,30 @@
 
     <!-- Sidebar innovante -->
     <div class="sidebar-container" id="sidebarContainer">
+        <!-- Header mobile pour la sidebar -->
+        <div class="mobile-sidebar-header d-lg-none">
+            <h5>Menu de navigation</h5>
+            <button class="mobile-sidebar-close" id="mobileSidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <!-- Informations utilisateur mobile -->
+        {% if current_user.is_authenticated %}
+        <div class="mobile-user-info d-lg-none">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="fas fa-user-circle fa-lg" style="color: var(--fk-accent);"></i>
+                <div>
+                    <strong>{{ current_user.username }}</strong>
+                    <div class="user-role">{{ current_user.get_role_display_name() }}</div>
+                    {% if current_user.client %}
+                    <div class="user-client">{{ current_user.client.nom }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Sidebar compacte (logos) - VISIBLE PAR DÉFAUT -->
         <div class="sidebar-compact" id="sidebarCompact">
             <!-- Logo FK -->
@@ -1340,8 +1562,8 @@
 
         <!-- Sidebar étendue (avec textes) - CACHÉE PAR DÉFAUT -->
         <div class="sidebar-expanded hidden" id="sidebarExpanded">
-            <!-- Bouton pour fermer la sidebar étendue -->
-            <button class="sidebar-close-control" id="closeSidebar" title="Fermer le menu complet">
+            <!-- Bouton pour fermer la sidebar étendue (desktop) -->
+            <button class="sidebar-close-control d-none d-lg-block" id="closeSidebar" title="Fermer le menu complet">
                 <i class="fas fa-times"></i>
             </button>
             
@@ -1521,6 +1743,21 @@
                     {% endif %}
                 </div>
                 {% endif %}
+                
+                <!-- Section utilisateur mobile -->
+                <div class="sidebar-section d-lg-none">
+                    <h6 class="sidebar-heading">Mon compte</h6>
+                    
+                    <a class="nav-link" href="{{ url_for('profil_utilisateur') }}">
+                        <i class="fas fa-user-edit sidebar-icon"></i>
+                        Mon profil
+                    </a>
+                    
+                    <a class="nav-link text-danger" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt sidebar-icon"></i>
+                        Déconnexion
+                    </a>
+                </div>
             </nav>
         </div>
     </div>
@@ -1598,22 +1835,29 @@
         const closeSidebar = document.getElementById('closeSidebar');
         const mobileToggle = document.getElementById('mobileToggle');
         const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+        const mobileSidebarClose = document.getElementById('mobileSidebarClose');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
         const themeToggle = document.getElementById('themeToggle');
 
         // État de la sidebar (par défaut: compacte)
         let isSidebarExpanded = localStorage.getItem('fkSidebarExpanded') === 'true';
+        let isMobile = window.innerWidth < 992;
 
         // Initialiser la sidebar
         function initSidebar() {
-            if (window.innerWidth >= 992) {
+            isMobile = window.innerWidth < 992;
+            
+            if (!isMobile) {
                 // Desktop : montrer la sidebar compacte par défaut
                 collapseSidebar();
                 sidebarContainer.style.transform = 'translateX(0)';
+                sidebarContainer.classList.remove('mobile-open');
+                sidebarOverlay.classList.remove('show');
             } else {
                 // Mobile : toujours masqué par défaut
                 sidebarContainer.style.transform = 'translateX(-100%)';
                 sidebarOverlay.classList.remove('show');
+                expandSidebarForMobile();
             }
             
             // Mettre à jour l'icône du burger
@@ -1622,6 +1866,11 @@
 
         // Étendre la sidebar (montrer le menu étendu)
         function expandSidebar() {
+            if (isMobile) {
+                expandSidebarForMobile();
+                return;
+            }
+            
             sidebarCompact.classList.add('hidden');
             sidebarExpanded.classList.remove('hidden');
             mainContent.classList.add('expanded');
@@ -1630,14 +1879,33 @@
             updateBurgerIcon();
         }
 
+        // Étendre la sidebar pour mobile
+        function expandSidebarForMobile() {
+            sidebarCompact.classList.add('hidden');
+            sidebarExpanded.classList.remove('hidden');
+            isSidebarExpanded = true;
+        }
+
         // Réduire la sidebar (montrer uniquement les logos)
         function collapseSidebar() {
+            if (isMobile) {
+                collapseSidebarForMobile();
+                return;
+            }
+            
             sidebarCompact.classList.remove('hidden');
             sidebarExpanded.classList.add('hidden');
             mainContent.classList.remove('expanded');
             isSidebarExpanded = false;
             localStorage.setItem('fkSidebarExpanded', 'false');
             updateBurgerIcon();
+        }
+
+        // Réduire la sidebar pour mobile
+        function collapseSidebarForMobile() {
+            sidebarContainer.classList.remove('mobile-open');
+            sidebarOverlay.classList.remove('show');
+            document.body.style.overflow = '';
         }
 
         // Mettre à jour l'icône du burger
@@ -1654,54 +1922,105 @@
         }
 
         // Toggle sidebar desktop
-        navbarSidebarToggle.addEventListener('click', () => {
-            if (isSidebarExpanded) {
-                collapseSidebar();
-            } else {
-                expandSidebar();
-            }
-        });
+        if (navbarSidebarToggle) {
+            navbarSidebarToggle.addEventListener('click', () => {
+                if (isSidebarExpanded) {
+                    collapseSidebar();
+                } else {
+                    expandSidebar();
+                }
+            });
+        }
 
-        // Fermer la sidebar étendue
-        closeSidebar.addEventListener('click', collapseSidebar);
+        // Fermer la sidebar étendue (desktop)
+        if (closeSidebar) {
+            closeSidebar.addEventListener('click', collapseSidebar);
+        }
 
         // Gestion responsive
         function handleResponsive() {
-            if (window.innerWidth >= 992) {
+            const wasMobile = isMobile;
+            isMobile = window.innerWidth < 992;
+            
+            if (isMobile !== wasMobile) {
+                initSidebar();
+            }
+            
+            if (isMobile) {
+                // Mobile : ajustements spécifiques
+                sidebarContainer.style.transform = sidebarContainer.classList.contains('mobile-open') 
+                    ? 'translateX(0)' 
+                    : 'translateX(-100%)';
+                mainContent.classList.remove('expanded');
+            } else {
                 // Desktop : restaurer l'état précédent
                 sidebarContainer.style.transform = 'translateX(0)';
+                sidebarContainer.classList.remove('mobile-open');
                 sidebarOverlay.classList.remove('show');
+                document.body.style.overflow = '';
                 
                 if (isSidebarExpanded) {
                     expandSidebar();
                 } else {
                     collapseSidebar();
                 }
-            } else {
-                // Mobile : toujours masqué par défaut
-                sidebarContainer.style.transform = 'translateX(-100%)';
-                mainContent.classList.remove('expanded');
-                sidebarContainer.classList.remove('mobile-open');
             }
         }
 
-        // Toggle mobile
-        mobileToggle.addEventListener('click', () => {
-            sidebarContainer.classList.toggle('mobile-open');
-            sidebarOverlay.classList.toggle('show');
-            collapseSidebar();
-        });
+        // Ouvrir sidebar mobile
+        function openMobileSidebar() {
+            sidebarContainer.classList.add('mobile-open');
+            sidebarOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
 
-        mobileSidebarToggle.addEventListener('click', () => {
-            sidebarContainer.classList.toggle('mobile-open');
-            sidebarOverlay.classList.toggle('show');
-            collapseSidebar();
-        });
-
-        // Fermer sidebar mobile en cliquant sur l'overlay
-        sidebarOverlay.addEventListener('click', () => {
+        // Fermer sidebar mobile
+        function closeMobileSidebar() {
             sidebarContainer.classList.remove('mobile-open');
             sidebarOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Toggle mobile depuis navbar
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', openMobileSidebar);
+        }
+
+        // Toggle mobile depuis bouton flottant
+        if (mobileSidebarToggle) {
+            mobileSidebarToggle.addEventListener('click', () => {
+                if (sidebarContainer.classList.contains('mobile-open')) {
+                    closeMobileSidebar();
+                } else {
+                    openMobileSidebar();
+                }
+            });
+        }
+
+        // Fermer sidebar mobile depuis le bouton X
+        if (mobileSidebarClose) {
+            mobileSidebarClose.addEventListener('click', closeMobileSidebar);
+        }
+
+        // Fermer sidebar mobile en cliquant sur l'overlay
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', closeMobileSidebar);
+        }
+
+        // Fermer sidebar mobile en appuyant sur Echap
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebarContainer.classList.contains('mobile-open')) {
+                closeMobileSidebar();
+            }
+        });
+
+        // Fermer sidebar mobile en cliquant sur un lien
+        document.querySelectorAll('.sidebar-menu-expanded .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (isMobile) {
+                    closeMobileSidebar();
+                }
+            });
         });
 
         // ============================================
@@ -2010,6 +2329,8 @@
                 .then(response => response.json())
                 .then(data => {
                     const dropdown = document.getElementById('notificationsDropdown');
+                    if (!dropdown) return;
+                    
                     let badge = dropdown.querySelector('.badge');
                     
                     if (data.count > 0) {
