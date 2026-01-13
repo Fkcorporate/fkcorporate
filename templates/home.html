@@ -1402,311 +1402,427 @@
         }
     }
     
-     /* ===== SUPER PRO SLIDER 3D ===== */
-     .pro-slider-container {
+     /* ===== SLIDER ÉLÉGANT PREMIUM ===== */
+    .slider-elegant-container {
         position: relative;
-        border-radius: 24px;
+        border-radius: 28px;
         overflow: hidden;
-        background: linear-gradient(135deg, var(--primary-navy), #0f1c30);
+        background: linear-gradient(165deg, 
+            rgba(10, 25, 41, 0.98) 0%,
+            rgba(17, 34, 64, 0.95) 50%,
+            rgba(10, 25, 41, 0.98) 100%);
         box-shadow: 
-            0 20px 60px rgba(0, 0, 0, 0.4),
-            0 0 0 1px rgba(255, 255, 255, 0.1) inset,
-            0 0 50px rgba(0, 102, 204, 0.2) inset;
-        backdrop-filter: blur(20px);
-        height: 500px;
+            0 25px 100px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(255, 255, 255, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(30px);
+        height: 560px;
+        margin: 0 auto;
+        max-width: 1200px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    .slider-wrapper {
+    .slider-elegant-wrapper {
         position: relative;
         width: 100%;
         height: 100%;
-        perspective: 2000px;
-        transform-style: preserve-3d;
+        overflow: hidden;
     }
 
-    .slider-track {
-        position: absolute;
+    .slider-elegant-track {
+        display: flex;
+        width: 200%;
+        height: 100%;
+        transition: transform 1.2s cubic-bezier(0.76, 0, 0.24, 1);
+    }
+
+    .elegant-slide {
+        width: 50%;
+        height: 100%;
+        position: relative;
+        padding: 4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .slide-content-wrapper {
+        position: relative;
         width: 100%;
         height: 100%;
-        transform-style: preserve-3d;
-        transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1);
+        display: flex;
+        align-items: center;
+        gap: 4rem;
     }
 
-    .slider-slide {
-        position: absolute;
-        width: 90%;
-        height: 90%;
-        top: 5%;
-        left: 5%;
+    .slide-image-container {
+        flex: 1;
+        position: relative;
         border-radius: 20px;
         overflow: hidden;
-        opacity: 0;
-        transform: translateZ(-100px) rotateY(45deg);
-        transition: all 1s cubic-bezier(0.77, 0, 0.175, 1);
-        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-        border: 2px solid transparent;
-        background: linear-gradient(45deg, var(--primary-blue), transparent) padding-box,
-                    linear-gradient(45deg, var(--accent-blue), transparent) border-box;
-    }
-
-    .slider-slide.active {
-        opacity: 1;
-        transform: translateZ(0) rotateY(0);
-        z-index: 10;
+        height: 380px;
         box-shadow: 
-            0 0 100px rgba(0, 102, 204, 0.4),
-            0 30px 80px rgba(0, 0, 0, 0.6),
-            inset 0 0 60px rgba(255, 255, 255, 0.05);
+            0 30px 80px rgba(0, 0, 0, 0.5),
+            0 0 0 1px rgba(255, 255, 255, 0.05);
+        transform: perspective(1000px) rotateY(-5deg);
+        transition: all 0.8s cubic-bezier(0.76, 0, 0.24, 1);
     }
 
-    .slider-slide.next {
-        opacity: 0.7;
-        transform: translateZ(-50px) rotateY(-45deg);
-        z-index: 5;
-        left: 55%;
-        filter: blur(1px);
+    .elegant-slide.active .slide-image-container {
+        transform: perspective(1000px) rotateY(0deg);
+        box-shadow: 
+            0 40px 120px rgba(0, 0, 0, 0.6),
+            0 0 0 1px rgba(255, 255, 255, 0.08),
+            0 0 80px rgba(0, 102, 204, 0.3);
     }
 
-    .slider-slide.prev {
-        opacity: 0.7;
-        transform: translateZ(-50px) rotateY(45deg);
-        z-index: 5;
-        left: -45%;
-        filter: blur(1px);
+    .slide-image-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, 
+            rgba(0, 102, 204, 0.1) 0%,
+            transparent 50%,
+            rgba(13, 148, 136, 0.1) 100%);
+        z-index: 1;
+        pointer-events: none;
     }
 
-    .slide-image {
+    .elegant-slide-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.5s ease;
+        transition: transform 1.2s cubic-bezier(0.76, 0, 0.24, 1);
     }
 
-    .slider-slide:hover .slide-image {
-        transform: scale(1.05);
+    .elegant-slide.active .elegant-slide-image {
+        transform: scale(1.02);
     }
 
-    .slide-overlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(to top, 
-            rgba(10, 25, 41, 0.95) 0%, 
-            rgba(10, 25, 41, 0.7) 50%, 
-            transparent 100%);
-        padding: 2.5rem;
-        transform: translateY(100%);
-        transition: transform 0.5s ease;
+    .slide-info-container {
+        flex: 1;
+        padding: 2rem;
+        position: relative;
+        opacity: 0;
+        transform: translateX(40px);
+        transition: all 0.8s cubic-bezier(0.76, 0, 0.24, 1) 0.3s;
+    }
+
+    .elegant-slide.active .slide-info-container {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .slide-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(10px);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.875rem;
+        letter-spacing: 1px;
     }
 
-    .slider-slide:hover .slide-overlay {
-        transform: translateY(0);
+    .slide-badge i {
+        color: var(--accent-blue);
     }
 
-    .slide-title {
+    .slide-title-elegant {
         color: var(--neutral-white);
-        font-size: 1.5rem;
-        margin-bottom: 0.5rem;
+        font-size: 2.5rem;
+        font-weight: 300;
+        line-height: 1.2;
+        margin-bottom: 1.5rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .slide-title-elegant strong {
+        font-weight: 600;
+        color: #60A5FA;
+        display: block;
+        margin-top: 0.5rem;
+    }
+
+    .slide-description-elegant {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.1rem;
+        line-height: 1.8;
+        margin-bottom: 2.5rem;
+        max-width: 480px;
+        font-weight: 300;
+    }
+
+    .slide-features {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .feature-item {
         display: flex;
         align-items: center;
         gap: 1rem;
-    }
-
-    .slide-title i {
-        color: var(--accent-blue);
-        font-size: 1.25rem;
-    }
-
-    .slide-description {
         color: rgba(255, 255, 255, 0.8);
-        font-size: 0.9rem;
-        line-height: 1.6;
+        font-size: 0.95rem;
     }
 
-    /* Contrôles du slider */
-    .slider-controls {
+    .feature-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(0, 102, 204, 0.15);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent-blue);
+        flex-shrink: 0;
+    }
+
+    .slide-stats {
+        display: flex;
+        gap: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-item-elegant {
+        text-align: center;
+    }
+
+    .stat-value {
+        color: #60A5FA;
+        font-size: 2.5rem;
+        font-weight: 300;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.875rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    /* Contrôles élégants */
+    .slider-controls-elegant {
         position: absolute;
-        bottom: 2rem;
+        bottom: 3rem;
         left: 50%;
         transform: translateX(-50%);
         display: flex;
-        gap: 1rem;
+        align-items: center;
+        gap: 3rem;
         z-index: 20;
-        padding: 1rem 2rem;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(20px);
-        border-radius: 50px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     }
 
-    .control-btn-slider {
-        width: 50px;
-        height: 50px;
-        background: linear-gradient(135deg, 
-            rgba(255, 255, 255, 0.1) 0%, 
-            rgba(255, 255, 255, 0.05) 100%);
+    .control-nav-elegant {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .nav-btn-elegant {
+        width: 56px;
+        height: 56px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: var(--neutral-white);
         cursor: pointer;
-        transition: all 0.3s ease;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .control-btn-slider:hover {
-        background: linear-gradient(135deg, var(--accent-blue), var(--accent-light-blue));
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0, 102, 204, 0.4);
-    }
-
-    .control-btn-slider:active {
-        transform: translateY(-1px);
-    }
-
-    .indicator-dots {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         position: relative;
+        overflow: hidden;
     }
 
-    .dot.active {
-        background: var(--gradient-blue);
-        width: 30px;
-        border-radius: 10px;
-    }
-
-    .dot::after {
+    .nav-btn-elegant::before {
         content: '';
         position: absolute;
-        top: -6px;
-        left: -6px;
-        right: -6px;
-        bottom: -6px;
-        border-radius: 50%;
-    }
-
-    .dot:hover::after {
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    /* Navigation au clavier */
-    .slide-indicators {
-        position: absolute;
-        top: 2rem;
-        right: 2rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        z-index: 20;
-    }
-
-    .slide-indicator {
-        padding: 0.5rem 1rem;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.75rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: 1px solid transparent;
-        text-align: center;
-        min-width: 120px;
-    }
-
-    .slide-indicator.active {
-        background: rgba(0, 102, 204, 0.3);
-        color: white;
-        border-color: var(--accent-blue);
-        box-shadow: 0 0 20px rgba(0, 102, 204, 0.3);
-    }
-
-    .slide-indicator:hover {
-        transform: translateX(-5px);
-        background: rgba(0, 102, 204, 0.2);
-    }
-
-    /* Info-bulles des slides */
-    .slide-tooltip {
-        position: absolute;
-        top: 2rem;
-        left: 2rem;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         background: linear-gradient(135deg, var(--accent-blue), var(--accent-light-blue));
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 50px;
-        font-size: 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        z-index: 5;
-        animation: pulse 2s infinite;
-        box-shadow: 0 5px 20px rgba(0, 102, 204, 0.4);
+        opacity: 0;
+        transition: opacity 0.4s ease;
     }
 
-    .slide-tooltip i {
-        font-size: 1rem;
+    .nav-btn-elegant:hover::before {
+        opacity: 1;
     }
 
-    /* Statistiques en temps réel */
-    .live-stats {
-        position: absolute;
-        bottom: 8rem;
-        left: 2rem;
-        display: flex;
-        gap: 1.5rem;
-        z-index: 15;
-    }
-
-    .live-stat {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        animation: slideInUp 0.5s ease;
-    }
-
-    .live-stat i {
-        color: var(--accent-blue);
+    .nav-btn-elegant i {
+        position: relative;
+        z-index: 1;
         font-size: 1.25rem;
     }
 
-    .live-stat span {
+    .nav-btn-elegant:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 102, 204, 0.3);
+    }
+
+    .nav-btn-elegant:active {
+        transform: translateY(0);
+    }
+
+    .slider-dots-elegant {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .dot-elegant {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+        position: relative;
+    }
+
+    .dot-elegant.active {
+        width: 40px;
+        border-radius: 10px;
+        background: linear-gradient(90deg, var(--accent-blue), var(--accent-light-blue));
+    }
+
+    .dot-elegant::after {
+        content: '';
+        position: absolute;
+        top: -8px;
+        left: -8px;
+        right: -8px;
+        bottom: -8px;
+        cursor: pointer;
+    }
+
+    /* Navigation latérale */
+    .slide-labels {
+        position: absolute;
+        top: 4rem;
+        right: 4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        z-index: 20;
+    }
+
+    .slide-label {
+        padding: 1rem 2rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.76, 0, 0.24, 1);
+        min-width: 180px;
+        text-align: center;
+        font-weight: 300;
+        letter-spacing: 1px;
+    }
+
+    .slide-label.active {
+        background: rgba(0, 102, 204, 0.15);
         color: var(--neutral-white);
-        font-weight: 600;
-        font-size: 1.1rem;
+        border-color: rgba(0, 102, 204, 0.3);
+        box-shadow: 0 10px 30px rgba(0, 102, 204, 0.2);
+        transform: translateX(-10px);
     }
 
-    .live-stat small {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.75rem;
-        display: block;
+    .slide-label:hover {
+        transform: translateX(-5px);
+        color: var(--neutral-white);
+        border-color: rgba(255, 255, 255, 0.1);
     }
 
-    /* Animation de chargement du slide */
-    @keyframes slideInUp {
+    /* Indicateur de progression */
+    .progress-indicator {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.05);
+        z-index: 25;
+    }
+
+    .progress-bar-elegant {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent-blue), var(--accent-light-blue));
+        width: 50%;
+        transition: transform 1.2s cubic-bezier(0.76, 0, 0.24, 1);
+    }
+
+    /* Effets visuels */
+    .slide-glow {
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: radial-gradient(circle, 
+            rgba(0, 102, 204, 0.2) 0%, 
+            rgba(0, 102, 204, 0.1) 30%,
+            transparent 70%);
+        filter: blur(40px);
+        pointer-events: none;
+        z-index: 1;
+        transition: all 0.8s ease;
+    }
+
+    .slide-1 .slide-glow {
+        top: 20%;
+        left: 20%;
+        background: radial-gradient(circle, 
+            rgba(0, 102, 204, 0.25) 0%, 
+            rgba(0, 102, 204, 0.1) 40%,
+            transparent 70%);
+    }
+
+    .slide-2 .slide-glow {
+        top: 20%;
+        right: 20%;
+        background: radial-gradient(circle, 
+            rgba(13, 148, 136, 0.25) 0%, 
+            rgba(13, 148, 136, 0.1) 40%,
+            transparent 70%);
+    }
+
+    /* Overlay de texture */
+    .texture-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.02) 0%, transparent 2%),
+            radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.02) 0%, transparent 2%);
+        background-size: 400px 400px;
+        opacity: 0.3;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
         from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(30px);
         }
         to {
             opacity: 1;
@@ -1714,124 +1830,145 @@
         }
     }
 
-    @keyframes fadeIn {
+    @keyframes scaleIn {
         from {
             opacity: 0;
+            transform: scale(0.95);
         }
         to {
             opacity: 1;
+            transform: scale(1);
         }
     }
 
     .slide-enter {
-        animation: slideInUp 0.8s ease forwards;
+        animation: fadeInUp 0.8s cubic-bezier(0.76, 0, 0.24, 1) forwards;
     }
 
-    /* Responsive */
+    .image-enter {
+        animation: scaleIn 1s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .slider-elegant-container {
+            height: 500px;
+            margin: 0 2rem;
+        }
+        
+        .elegant-slide {
+            padding: 3rem;
+        }
+        
+        .slide-content-wrapper {
+            gap: 3rem;
+        }
+        
+        .slide-image-container {
+            height: 320px;
+        }
+    }
+
     @media (max-width: 992px) {
-        .pro-slider-container {
-            height: 400px;
+        .slider-elegant-container {
+            height: auto;
+            min-height: 500px;
         }
         
-        .slider-slide {
-            width: 95%;
-            height: 85%;
-            top: 7.5%;
-            left: 2.5%;
+        .slide-content-wrapper {
+            flex-direction: column;
+            gap: 3rem;
         }
         
-        .slider-slide.next {
-            left: 60%;
+        .slide-image-container {
+            height: 300px;
+            width: 100%;
         }
         
-        .slider-slide.prev {
-            left: -60%;
+        .slide-info-container {
+            width: 100%;
         }
         
-        .slide-overlay {
-            padding: 1.5rem;
+        .slide-title-elegant {
+            font-size: 2rem;
         }
         
-        .slide-title {
-            font-size: 1.25rem;
+        .slide-labels {
+            top: 2rem;
+            right: 2rem;
         }
         
-        .live-stats {
-            bottom: 6rem;
-            left: 1rem;
-            gap: 1rem;
-        }
-        
-        .live-stat {
-            padding: 0.75rem 1rem;
+        .slide-label {
+            min-width: 140px;
+            padding: 0.75rem 1.5rem;
         }
     }
 
     @media (max-width: 768px) {
-        .pro-slider-container {
-            height: 350px;
+        .slider-elegant-container {
+            margin: 0 1rem;
+            border-radius: 20px;
         }
         
-        .slider-controls {
-            padding: 0.75rem 1.5rem;
+        .elegant-slide {
+            padding: 2rem;
         }
         
-        .control-btn-slider {
-            width: 40px;
-            height: 40px;
+        .slide-features {
+            grid-template-columns: 1fr;
         }
         
-        .slide-indicators {
-            top: 1rem;
-            right: 1rem;
+        .slide-stats {
+            gap: 2rem;
         }
         
-        .slide-indicator {
-            min-width: 100px;
-            font-size: 0.7rem;
-            padding: 0.4rem 0.8rem;
+        .stat-value {
+            font-size: 2rem;
         }
         
-        .live-stats {
-            display: none; /* Cacher sur mobile pour économiser l'espace */
+        .slider-controls-elegant {
+            bottom: 2rem;
+        }
+        
+        .nav-btn-elegant {
+            width: 48px;
+            height: 48px;
+        }
+        
+        .slide-labels {
+            position: relative;
+            top: auto;
+            right: auto;
+            flex-direction: row;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        
+        .slide-label {
+            min-width: 120px;
         }
     }
 
-    /* Effet de particules (optionnel) */
-    .particles {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        pointer-events: none;
-        z-index: 1;
-    }
-
-    .particle {
-        position: absolute;
-        width: 2px;
-        height: 2px;
-        background: var(--accent-blue);
-        border-radius: 50%;
-        opacity: 0;
-        animation: floatParticle 20s infinite linear;
-    }
-
-    @keyframes floatParticle {
-        0% {
-            transform: translateY(100vh) translateX(0);
-            opacity: 0;
+    @media (max-width: 576px) {
+        .elegant-slide {
+            padding: 1.5rem;
         }
-        10% {
-            opacity: 0.5;
+        
+        .slide-title-elegant {
+            font-size: 1.75rem;
         }
-        90% {
-            opacity: 0.5;
+        
+        .slide-description-elegant {
+            font-size: 1rem;
         }
-        100% {
-            transform: translateY(-100px) translateX(100px);
-            opacity: 0;
+        
+        .slider-controls-elegant {
+            gap: 2rem;
+        }
+        
+        .nav-btn-elegant {
+            width: 44px;
+            height: 44px;
         }
     }
     </style>
@@ -2310,164 +2447,51 @@
     <section class="dashboard-section" id="dashboard">
         <div class="container">
             <div class="section-title">
-                <span class="badge badge-secondary mb-3">VISUALISATION 3D • IA ENHANCED</span>
-                <h2 style="color: var(--neutral-white);">Tableaux de Bord Intelligents</h2>
-                <p class="lead" style="color: rgba(255, 255, 255, 0.9);">Explorez nos interfaces premium en immersion 3D</p>
+                <span class="badge badge-secondary mb-3">INTERFACE PREMIUM</span>
+                <h2 style="color: var(--neutral-white);">Tableau de bord exécutif</h2>
+                <p class="lead" style="color: rgba(255, 255, 255, 0.9);">Une interface conçue pour l'excellence opérationnelle</p>
             </div>
             
-            <div class="pro-slider-container" data-aos="fade-up">
-                <!-- Particules d'arrière-plan -->
-                <div class="particles" id="particles"></div>
-                
-                <!-- Indicateurs de navigation -->
-                <div class="slide-indicators">
-                    <div class="slide-indicator active" data-slide="0">
-                        <i class="fas fa-chart-network"></i>
-                        Tableau de Bordeaux
+            <div class="dashboard-preview" data-aos="fade-up">
+                <div class="dashboard-header">
+                    <div class="dashboard-title">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <h4 style="margin: 0; color: var(--neutral-white);">Vue d'ensemble exécutive</h4>
                     </div>
-                    <div class="slide-indicator" data-slide="1">
-                        <i class="fas fa-robot"></i>
-                        IA Audit Avancé
-                    </div>
-                </div>
-                
-                <!-- Tooltip info -->
-                <div class="slide-tooltip">
-                    <i class="fas fa-mouse-pointer"></i>
-                    Survolez les slides pour plus d'infos
-                </div>
-                
-                <!-- Wrapper du slider -->
-                <div class="slider-wrapper">
-                    <div class="slider-track" id="sliderTrack">
-                        <!-- Slide 1: Tableau de Bordeaux -->
-                        <div class="slider-slide active" data-slide="0">
-                            <img src="/static/images/tableau-bordeaux.png" 
-                                 alt="Tableau de Bordeaux Intelligent FK Corporate"
-                                 class="slide-image">
-                            <div class="slide-overlay">
-                                <h3 class="slide-title">
-                                    <i class="fas fa-chart-bubble"></i>
-                                    Tableau de Bordeaux
-                                </h3>
-                                <p class="slide-description">
-                                    Visualisation thermique des risques en temps réel. Matrice intelligente avec clustering automatique et détection d'anomalies. Surveillance proactive des KRI.
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <!-- Slide 2: IA Audit -->
-                        <div class="slider-slide next" data-slide="1">
-                            <img src="/static/images/ia-audit.png" 
-                                 alt="IA Audit Avancé FK Corporate"
-                                 class="slide-image">
-                            <div class="slide-overlay">
-                                <h3 class="slide-title">
-                                    <i class="fas fa-brain"></i>
-                                    IA Audit Avancé
-                                </h3>
-                                <p class="slide-description">
-                                    Analyse prédictive automatisée avec NLP. Détection de fraudes en temps réel. Génération automatique de recommandations optimisées par apprentissage profond.
-                                </p>
-                            </div>
-                        </div>
+                    <div class="d-flex gap-2">
+                        <span class="badge" style="background: rgba(0, 102, 204, 0.2); color: #60A5FA; border-color: #60A5FA;">
+                            <i class="fas fa-eye"></i> Surveillance
+                        </span>
+                        <span class="badge" style="background: rgba(13, 148, 136, 0.2); color: var(--accent-teal); border-color: var(--accent-teal);">
+                            <i class="fas fa-chart-line"></i> Analytics
+                        </span>
                     </div>
                 </div>
                 
-                <!-- Statistiques en direct -->
-                <div class="live-stats">
-                    <div class="live-stat">
-                        <i class="fas fa-bolt"></i>
-                        <div>
-                            <span id="liveRiskCount">24</span>
-                            <small>Risques détectés</small>
-                        </div>
-                    </div>
-                    <div class="live-stat">
-                        <i class="fas fa-shield-check"></i>
-                        <div>
-                            <span id="liveCompliance">98%</span>
-                            <small>Taux de conformité</small>
-                        </div>
-                    </div>
-                    <div class="live-stat">
-                        <i class="fas fa-robot"></i>
-                        <div>
-                            <span id="liveAnomalies">3</span>
-                            <small>Anomalies IA</small>
-                        </div>
-                    </div>
+                <div class="dashboard-image">
+                    <img src="/static/images/dashboard-preview.png" 
+                        alt="Interface exécutive FK Corporate Intelligence"
+                        class="img-fluid">
                 </div>
                 
-                <!-- Contrôles du slider -->
-                <div class="slider-controls">
-                    <button class="control-btn-slider" id="prevSlide">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    
-                    <div class="indicator-dots">
-                        <div class="dot active" data-slide="0"></div>
-                        <div class="dot" data-slide="1"></div>
-                    </div>
-                    
-                    <button class="control-btn-slider" id="nextSlide">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Description des fonctionnalités -->
-            <div class="row mt-6 pt-6">
-                <div class="col-lg-6" data-aos="fade-right">
-                    <div class="feature-highlight">
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <div class="highlight-icon">
-                                <i class="fas fa-chart-heatmap"></i>
-                            </div>
-                            <h4 style="color: var(--neutral-white);">Tableau de Bordeaux 4.0</h4>
-                        </div>
-                        <p style="color: rgba(255, 255, 255, 0.8);">
-                            Notre matrice de risques intelligente utilise l'IA pour classifier automatiquement les risques, 
-                            prédire leur évolution et suggérer des actions correctives. Visualisation thermique en temps réel 
-                            avec clustering automatique et alertes proactives.
-                        </p>
-                        <div class="mt-3">
-                            <span class="badge" style="background: rgba(0, 102, 204, 0.2); color: #60A5FA; border-color: #60A5FA;">
-                                <i class="fas fa-sync-alt fa-spin"></i> Temps Réel
-                            </span>
-                            <span class="badge" style="background: rgba(13, 148, 136, 0.2); color: var(--accent-teal); border-color: var(--accent-teal);">
-                                <i class="fas fa-brain"></i> IA Predictive
-                            </span>
-                            <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: var(--accent-light-blue); border-color: var(--accent-light-blue);">
-                                <i class="fas fa-layer-group"></i> Multi-dimensionnel
-                            </span>
+                <div style="display: flex; justify-content: space-around; padding: 2rem; 
+                            background: rgba(255, 255, 255, 0.05); border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #60A5FA;">45</div>
+                        <div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.8); text-transform: uppercase; letter-spacing: 1px;">
+                            <i class="fas fa-flag me-1"></i>Indicateurs
                         </div>
                     </div>
-                </div>
-                
-                <div class="col-lg-6" data-aos="fade-left">
-                    <div class="feature-highlight">
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <div class="highlight-icon">
-                                <i class="fas fa-microchip"></i>
-                            </div>
-                            <h4 style="color: var(--neutral-white);">IA Audit Deep Learning</h4>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--accent-teal);">100%</div>
+                        <div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.8); text-transform: uppercase; letter-spacing: 1px;">
+                            <i class="fas fa-check-circle me-1"></i>Conformité
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.8);">
-                            Système d'audit intelligent utilisant le deep learning pour analyser des millions de transactions 
-                            en temps réel. Détection de patterns anormaux, analyse sémantique des documents et génération 
-                            automatique de rapports d'audit certifiés.
-                        </p>
-                        <div class="mt-3">
-                            <span class="badge" style="background: rgba(0, 102, 204, 0.2); color: #60A5FA; border-color: #60A5FA;">
-                                <i class="fas fa-robot"></i> Deep Learning
-                            </span>
-                            <span class="badge" style="background: rgba(13, 148, 136, 0.2); color: var(--accent-teal); border-color: var(--accent-teal);">
-                                <i class="fas fa-language"></i> NLP Avancé
-                            </span>
-                            <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: var(--accent-light-blue); border-color: var(--accent-light-blue);">
-                                <i class="fas fa-bolt"></i> Temps Réel
-                            </span>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--accent-light-blue);">0</div>
+                        <div style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.8); text-transform: uppercase; letter-spacing: 1px;">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Incidents
                         </div>
                     </div>
                 </div>
@@ -3344,281 +3368,6 @@ settingsStyle.textContent = `
     }
 `;
 document.head.appendChild(settingsStyle);
-
-// SUPER PRO 3D SLIDER
-document.addEventListener('DOMContentLoaded', function() {
-    const sliderTrack = document.getElementById('sliderTrack');
-    const slides = document.querySelectorAll('.slider-slide');
-    const dots = document.querySelectorAll('.dot');
-    const indicators = document.querySelectorAll('.slide-indicator');
-    const prevBtn = document.getElementById('prevSlide');
-    const nextBtn = document.getElementById('nextSlide');
-    const particlesContainer = document.getElementById('particles');
-    
-    let currentSlide = 0;
-    const totalSlides = slides.length;
-    let autoSlideInterval;
-    
-    // Créer les particules d'arrière-plan
-    function createParticles() {
-        for (let i = 0; i < 50; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = `${Math.random() * 100}%`;
-            particle.style.width = `${Math.random() * 3 + 1}px`;
-            particle.style.height = particle.style.width;
-            particle.style.animationDelay = `${Math.random() * 20}s`;
-            particle.style.animationDuration = `${Math.random() * 10 + 15}s`;
-            particlesContainer.appendChild(particle);
-        }
-    }
-    
-    // Mettre à jour les statistiques en direct
-    function updateLiveStats() {
-        const riskCount = document.getElementById('liveRiskCount');
-        const compliance = document.getElementById('liveCompliance');
-        const anomalies = document.getElementById('liveAnomalies');
-        
-        if (currentSlide === 0) {
-            // Stats pour Tableau de Bordeaux
-            riskCount.textContent = Math.floor(Math.random() * 10 + 20);
-            compliance.textContent = `${Math.floor(Math.random() * 3 + 96)}%`;
-            anomalies.textContent = Math.floor(Math.random() * 5 + 1);
-        } else {
-            // Stats pour IA Audit
-            riskCount.textContent = Math.floor(Math.random() * 50 + 100);
-            compliance.textContent = `${Math.floor(Math.random() * 2 + 99)}%`;
-            anomalies.textContent = Math.floor(Math.random() * 8 + 5);
-        }
-    }
-    
-    // Changer de slide
-    function goToSlide(index) {
-        if (index < 0) index = totalSlides - 1;
-        if (index >= totalSlides) index = 0;
-        
-        currentSlide = index;
-        
-        // Mettre à jour les classes des slides
-        slides.forEach((slide, i) => {
-            slide.classList.remove('active', 'prev', 'next');
-            
-            if (i === index) {
-                slide.classList.add('active');
-                slide.style.zIndex = '10';
-            } else if (i === (index + 1) % totalSlides) {
-                slide.classList.add('next');
-                slide.style.zIndex = '5';
-            } else {
-                slide.classList.add('prev');
-                slide.style.zIndex = '5';
-            }
-        });
-        
-        // Mettre à jour les indicateurs
-        dots.forEach((dot, i) => {
-            dot.classList.toggle('active', i === index);
-        });
-        
-        indicators.forEach((indicator, i) => {
-            indicator.classList.toggle('active', i === index);
-        });
-        
-        // Mettre à jour les stats
-        updateLiveStats();
-        
-        // Ajouter une animation d'entrée
-        const activeSlide = slides[index];
-        activeSlide.classList.add('slide-enter');
-        setTimeout(() => {
-            activeSlide.classList.remove('slide-enter');
-        }, 800);
-    }
-    
-    // Slide suivant
-    function nextSlide() {
-        goToSlide(currentSlide + 1);
-    }
-    
-    // Slide précédent
-    function prevSlide() {
-        goToSlide(currentSlide - 1);
-    }
-    
-    // Démarrer l'auto-slide
-    function startAutoSlide() {
-        autoSlideInterval = setInterval(nextSlide, 5000);
-    }
-    
-    // Arrêter l'auto-slide
-    function stopAutoSlide() {
-        clearInterval(autoSlideInterval);
-    }
-    
-    // Événements
-    prevBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        prevSlide();
-        stopAutoSlide();
-        setTimeout(startAutoSlide, 10000); // Redémarrer après 10s
-    });
-    
-    nextBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        nextSlide();
-        stopAutoSlide();
-        setTimeout(startAutoSlide, 10000);
-    });
-    
-    // Navigation par points
-    dots.forEach(dot => {
-        dot.addEventListener('click', function() {
-            const slideIndex = parseInt(this.dataset.slide);
-            goToSlide(slideIndex);
-            stopAutoSlide();
-            setTimeout(startAutoSlide, 10000);
-        });
-    });
-    
-    // Navigation par indicateurs
-    indicators.forEach(indicator => {
-        indicator.addEventListener('click', function() {
-            const slideIndex = parseInt(this.dataset.slide);
-            goToSlide(slideIndex);
-            stopAutoSlide();
-            setTimeout(startAutoSlide, 10000);
-        });
-    });
-    
-    // Navigation au clavier
-    document.addEventListener('keydown', function(e) {
-        if (document.activeElement !== document.body) return;
-        
-        switch(e.key) {
-            case 'ArrowLeft':
-                e.preventDefault();
-                prevSlide();
-                stopAutoSlide();
-                setTimeout(startAutoSlide, 10000);
-                break;
-            case 'ArrowRight':
-                e.preventDefault();
-                nextSlide();
-                stopAutoSlide();
-                setTimeout(startAutoSlide, 10000);
-                break;
-            case '1':
-                e.preventDefault();
-                goToSlide(0);
-                stopAutoSlide();
-                setTimeout(startAutoSlide, 10000);
-                break;
-            case '2':
-                e.preventDefault();
-                goToSlide(1);
-                stopAutoSlide();
-                setTimeout(startAutoSlide, 10000);
-                break;
-        }
-    });
-    
-    // Swipe sur mobile
-    let touchStartX = 0;
-    let touchEndX = 0;
-    
-    sliderTrack.addEventListener('touchstart', function(e) {
-        touchStartX = e.changedTouches[0].screenX;
-    });
-    
-    sliderTrack.addEventListener('touchend', function(e) {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-    });
-    
-    function handleSwipe() {
-        const swipeThreshold = 50;
-        const diff = touchStartX - touchEndX;
-        
-        if (Math.abs(diff) > swipeThreshold) {
-            if (diff > 0) {
-                nextSlide();
-            } else {
-                prevSlide();
-            }
-            stopAutoSlide();
-            setTimeout(startAutoSlide, 10000);
-        }
-    }
-    
-    // Effet de survol sur le container
-    const sliderContainer = document.querySelector('.pro-slider-container');
-    sliderContainer.addEventListener('mouseenter', stopAutoSlide);
-    sliderContainer.addEventListener('mouseleave', startAutoSlide);
-    
-    // Initialisation
-    createParticles();
-    updateLiveStats();
-    startAutoSlide();
-    
-    // Animation des stats en temps réel
-    setInterval(updateLiveStats, 3000);
-});
-
-// Ajoutez ces styles pour les icônes de highlight
-const highlightStyles = document.createElement('style');
-highlightStyles.textContent = `
-    .feature-highlight {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 2rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.3s ease;
-        height: 100%;
-    }
-    
-    .feature-highlight:hover {
-        transform: translateY(-5px);
-        border-color: var(--accent-blue);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    }
-    
-    .highlight-icon {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, var(--accent-blue), var(--accent-light-blue));
-        border-radius: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-        flex-shrink: 0;
-    }
-    
-    .mt-6 {
-        margin-top: 6rem !important;
-    }
-    
-    .pt-6 {
-        padding-top: 6rem !important;
-    }
-    
-    @media (max-width: 768px) {
-        .mt-6 {
-            margin-top: 4rem !important;
-        }
-        
-        .pt-6 {
-            padding-top: 4rem !important;
-        }
-        
-        .feature-highlight {
-            padding: 1.5rem;
-        }
-    }
-`;
-document.head.appendChild(highlightStyles);
     </script>
 </body>
 </html>
