@@ -688,17 +688,14 @@
                 white-space: nowrap;
             }
             
-            /* Menu utilisateur visible sur mobile */
-            .navbar-nav .nav-link span:not(.vue-client-label) {
-                display: none;
+            /* Cacher TOUS les éléments du menu sur mobile sauf connexion/déconnexion */
+            .navbar-nav .nav-item:not(.mobile-user-menu) {
+                display: none !important;
             }
             
-            .vue-client-label {
-                max-width: 100px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                display: inline-block !important;
+            /* Menu utilisateur mobile visible */
+            .mobile-user-menu {
+                display: flex !important;
             }
             
             /* Overlay pour mobile */
@@ -923,24 +920,6 @@
                 min-height: calc(100vh - 64px - 60px); /* 60px pour le footer */
             }
             
-            /* Menu utilisateur dans navbar - version mobile */
-            .navbar-collapse {
-                position: fixed;
-                top: 64px;
-                left: 0;
-                right: 0;
-                background: var(--primary-gradient);
-                padding: 1rem;
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-                z-index: 1035;
-                max-height: calc(100vh - 64px);
-                overflow-y: auto;
-            }
-            
-            .navbar-collapse.show {
-                display: block !important;
-            }
-            
             /* Navigation mobile dans le menu latéral */
             .mobile-nav-user-section {
                 padding: 1rem;
@@ -958,10 +937,6 @@
         @media (max-width: 576px) {
             .navbar-brand-fk span {
                 max-width: 120px;
-            }
-            
-            .vue-client-label {
-                max-width: 80px;
             }
             
             .mobile-sidebar-toggle {
@@ -1010,6 +985,16 @@
             
             .sidebar-menu-expanded .nav-link {
                 padding: 0.875rem;
+            }
+            
+            /* Menu utilisateur mobile plus compact */
+            .mobile-user-menu .nav-link {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+            }
+            
+            .mobile-user-menu .dropdown-menu {
+                min-width: 200px !important;
             }
         }
 
@@ -1229,13 +1214,27 @@
         [data-bs-theme="dark"] .menu-scrollable-content::-webkit-scrollbar-thumb {
             background: #475569;
         }
+        
+        /* Style pour le menu utilisateur mobile */
+        .mobile-user-menu .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            transition: var(--transition-smooth);
+        }
+        
+        .mobile-user-menu .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
     </style>
 </head>
 <body>
     <!-- Navigation Principale -->
     <nav class="navbar navbar-expand-lg navbar-fk navbar-dark sticky-top">
         <div class="container-fluid">
-            <!-- Bouton burger pour sidebar -->
+            <!-- Bouton burger pour sidebar (desktop uniquement) -->
             <button class="sidebar-navbar-control d-none d-lg-flex" id="navbarSidebarToggle" title="Ouvrir le menu complet">
                 <i class="fas fa-bars"></i>
             </button>
@@ -1247,7 +1246,7 @@
             </a>
 
             <!-- Bouton toggle mobile - visible uniquement sur mobile -->
-            <button class="btn d-lg-none me-2 text-white" type="button" id="mobileToggle" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="btn d-lg-none me-2 text-white" type="button" id="mobileToggle">
                 <i class="fas fa-bars"></i>
             </button>
 
@@ -1256,15 +1255,62 @@
                 <i class="fas fa-moon"></i>
             </button>
 
-            <!-- Menu utilisateur avec Actions Rapides et Paramétrage -->
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- Menu utilisateur MOBILE SIMPLIFIÉ -->
+            <div class="navbar-nav ms-auto">
+                {% if current_user.is_authenticated %}
+                <!-- Utilisateur connecté sur mobile : menu profil/déconnexion -->
+                <li class="nav-item dropdown mobile-user-menu">
+                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2" href="#" 
+                       role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="d-none d-md-inline">{{ current_user.username|truncate(10) }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <span class="dropdown-item text-muted">
+                                <i class="fas fa-user-tag me-2"></i>
+                                {{ current_user.get_role_display_name() }}
+                                {% if current_user.client %}
+                                <br><small>{{ current_user.client.nom }}</small>
+                                {% endif %}
+                            </span>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('profil_utilisateur') }}">
+                                <i class="fas fa-user-edit me-2"></i>
+                                Mon profil
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Déconnexion
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {% else %}
+                <!-- Utilisateur NON connecté sur mobile : bouton Connexion -->
+                <li class="nav-item mobile-user-menu">
+                    <a class="nav-link text-white d-flex align-items-center gap-2" href="{{ url_for('login') }}">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span class="d-none d-md-inline">Connexion</span>
+                    </a>
+                </li>
+                {% endif %}
+            </div>
+
+            <!-- Menu utilisateur DESKTOP COMPLET (caché sur mobile) -->
+            <div class="collapse navbar-collapse d-none d-lg-block" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <!-- Menu Actions Rapides -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2" href="#" 
                            role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-bolt"></i>
-                            <span class="d-none d-lg-inline">Actions Rapides</span>
+                            <span>Actions Rapides</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             {% if should_display_module('can_manage_logigram') %}
@@ -1346,7 +1392,7 @@
                         <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2" href="#" 
                            role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-cogs"></i>
-                            <span class="d-none d-lg-inline">Paramétrage</span>
+                            <span>Paramétrage</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             {% if url_exists('parametrage_risque') %}
@@ -1428,7 +1474,7 @@
                         <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2 vue-client-active" 
                            href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-eye"></i>
-                            <span class="vue-client-label d-none d-lg-inline">
+                            <span class="vue-client-label">
                                 {% if session.get('viewing_client_id') %}
                                 Vue: {{ session.viewing_client_name|truncate(15) }}
                                 {% else %}
@@ -1480,44 +1526,9 @@
                     </li>
                     {% endif %}
 
-                    <!-- Menu utilisateur -->
+                    <!-- Menu utilisateur DESKTOP COMPLET -->
                     {% if current_user.is_authenticated %}
-                    <li class="nav-item dropdown d-lg-none">
-                        <!-- Version mobile : menu simple -->
-                        <a class="nav-link text-white d-flex align-items-center gap-2" href="#" 
-                           role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle"></i>
-                            <span>{{ current_user.username|truncate(10) }}</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <span class="dropdown-item text-muted">
-                                    <i class="fas fa-user-tag me-2"></i>
-                                    {{ current_user.get_role_display_name() }}
-                                    {% if current_user.client %}
-                                    <br><small>{{ current_user.client.nom }}</small>
-                                    {% endif %}
-                                </span>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('profil_utilisateur') }}">
-                                    <i class="fas fa-user-edit me-2"></i>
-                                    Mon profil
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
-                                    <i class="fas fa-sign-out-alt me-2"></i>
-                                    Déconnexion
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    
-                    <!-- Version desktop (cachée sur mobile) -->
-                    <li class="nav-item dropdown d-none d-lg-block">
+                    <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2" href="#" 
                            role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle"></i>
@@ -1644,16 +1655,8 @@
                         </ul>
                     </li>
                     {% else %}
-                    <!-- Non connecté - version mobile -->
-                    <li class="nav-item d-lg-none">
-                        <a class="nav-link text-white" href="{{ url_for('login') }}">
-                            <i class="fas fa-sign-in-alt me-2"></i>
-                            Connexion
-                        </a>
-                    </li>
-                    
                     <!-- Non connecté - version desktop -->
-                    <li class="nav-item d-none d-lg-block">
+                    <li class="nav-item">
                         <a class="nav-link text-white" href="{{ url_for('login') }}">
                             <i class="fas fa-sign-in-alt me-2"></i>
                             Connexion
@@ -2099,12 +2102,6 @@
                 sidebarOverlay.classList.remove('show');
                 sidebarExpanded.classList.remove('hidden');
                 sidebarCompact.classList.add('hidden');
-                
-                // Cacher la sidebar étendue desktop
-                const sidebarExpandedDesktop = document.querySelector('.sidebar-expanded');
-                if (sidebarExpandedDesktop) {
-                    sidebarExpandedDesktop.classList.remove('hidden');
-                }
             }
             
             // Mettre à jour l'icône du burger
@@ -2113,7 +2110,7 @@
 
         // Étendre la sidebar (montrer le menu étendu)
         function expandSidebar() {
-            if (isMobile) return; // Sur mobile, on utilise un système différent
+            if (isMobile) return;
             
             sidebarCompact.classList.add('hidden');
             sidebarExpanded.classList.remove('hidden');
@@ -2125,7 +2122,7 @@
 
         // Réduire la sidebar (montrer uniquement les logos)
         function collapseSidebar() {
-            if (isMobile) return; // Sur mobile, on utilise un système différent
+            if (isMobile) return;
             
             sidebarCompact.classList.remove('hidden');
             sidebarExpanded.classList.add('hidden');
@@ -2177,12 +2174,6 @@
                 document.body.classList.remove('menu-open');
                 mobileSidebarToggle.classList.remove('active');
                 
-                // Fermer le collapse Bootstrap sur mobile
-                const navbarCollapse = document.getElementById('navbarNav');
-                if (navbarCollapse && navbarCollapse.classList.contains('show')) {
-                    navbarCollapse.classList.remove('show');
-                }
-                
                 if (isSidebarExpanded) {
                     expandSidebar();
                 } else {
@@ -2210,12 +2201,6 @@
             document.body.classList.add('menu-open');
             mobileSidebarToggle.classList.add('active');
             mobileSidebarToggle.innerHTML = '<i class="fas fa-times"></i>';
-            
-            // Fermer le collapse Bootstrap si ouvert
-            const navbarCollapse = document.getElementById('navbarNav');
-            if (navbarCollapse && navbarCollapse.classList.contains('show')) {
-                navbarCollapse.classList.remove('show');
-            }
         }
 
         // Fermer le menu mobile
@@ -2239,15 +2224,7 @@
 
         // Toggle mobile
         if (mobileToggle) {
-            mobileToggle.addEventListener('click', function(e) {
-                // Si on est sur mobile, on laisse Bootstrap gérer le collapse
-                if (isMobile && window.innerWidth < 992) {
-                    // Bootstrap gère déjà le collapse
-                    return;
-                }
-                // Sinon, on toggle le menu latéral
-                toggleMobileMenu();
-            });
+            mobileToggle.addEventListener('click', toggleMobileMenu);
         }
 
         if (mobileSidebarToggle) {
@@ -2280,11 +2257,6 @@
             const icon = themeToggle.querySelector('i');
             icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
             localStorage.setItem('fkTheme', theme);
-            
-            document.body.style.color = theme === 'dark' ? '#E2E8F0' : '#1E293B';
-            document.querySelectorAll('.main-content').forEach(el => {
-                el.style.color = theme === 'dark' ? '#E2E8F0' : '#1E293B';
-            });
         }
 
         // Initialiser le thème
@@ -2362,40 +2334,6 @@
                 };
                 return await fetch(url, mergedOptions);
             };
-            
-            // Animation des cartes au scroll
-            const observerOptions = {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
-            };
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }
-                });
-            }, observerOptions);
-            
-            document.querySelectorAll('.fk-card').forEach(el => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(20px)';
-                el.style.transition = 'all 0.6s ease-out';
-                observer.observe(el);
-            });
-            
-            // Fermer le collapse Bootstrap quand on clique sur un lien
-            document.querySelectorAll('#navbarNav .nav-link').forEach(link => {
-                link.addEventListener('click', function() {
-                    if (isMobile) {
-                        const navbarCollapse = document.getElementById('navbarNav');
-                        if (navbarCollapse && navbarCollapse.classList.contains('show')) {
-                            bootstrap.Collapse.getInstance(navbarCollapse).hide();
-                        }
-                    }
-                });
-            });
         });
 
         // ============================================
@@ -2420,10 +2358,6 @@
             toastContainer.appendChild(toast);
             const bsToast = new bootstrap.Toast(toast);
             bsToast.show();
-            
-            toast.addEventListener('hidden.bs.toast', () => {
-                toast.remove();
-            });
         };
 
         function createToastContainer() {
@@ -2435,252 +2369,15 @@
             return container;
         }
 
-        // Confirmation avant actions critiques
-        document.querySelectorAll('.confirm-action').forEach(button => {
-            button.addEventListener('click', function(e) {
-                if (!confirm(this.dataset.message || 'Êtes-vous sûr de vouloir effectuer cette action ?')) {
-                    e.preventDefault();
-                }
-            });
-        });
-
-        // Gestion des chargements
-        window.showLoader = function(button) {
-            if (button) {
-                const originalText = button.innerHTML;
-                button.innerHTML = '<span class="fk-loader"></span> Chargement...';
-                button.disabled = true;
-                return originalText;
-            }
-        };
-
-        window.hideLoader = function(button, originalText) {
-            if (button && originalText) {
-                button.innerHTML = originalText;
-                button.disabled = false;
-            }
-        };
-
-        // ==================== GESTION DES NOTIFICATIONS ====================
-        
-        // Charger les notifications dans le dropdown
-        function chargerNotificationsDropdown() {
-            const container = document.getElementById('notificationsDropdownContent');
-            if (!container) return;
-            
-            fetch('/api/notifications/recent?limit=5')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.notifications && data.notifications.length > 0) {
-                        let html = '<div class="list-group list-group-flush">';
-                        
-                        data.notifications.forEach(notif => {
-                            const timeAgo = getTimeAgo(notif.created_at);
-                            const badgeUrgent = notif.urgence === 'urgent' ? 
-                                '<span class="badge bg-danger ms-2">URGENT</span>' : 
-                                notif.urgence === 'important' ? 
-                                '<span class="badge bg-warning ms-2">IMPORTANT</span>' : '';
-                            
-                            html += `
-                                <a href="${notif.url || '#'}" 
-                                   class="list-group-item list-group-item-action p-3 ${!notif.est_lue ? 'fw-bold' : ''}"
-                                   onclick="${!notif.est_lue ? `marquerNotificationLue(${notif.id}, event)` : ''}">
-                                    <div class="d-flex align-items-start">
-                                        <div class="flex-shrink-0">
-                                            <div class="rounded-circle p-2 bg-${notif.color || 'primary'} bg-opacity-10">
-                                                <i class="fas fa-${notif.icon || 'bell'} text-${notif.color || 'primary'}"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                                <h6 class="mb-0" style="font-size: 0.9rem;">
-                                                    ${notif.titre} ${badgeUrgent}
-                                                </h6>
-                                                <small class="text-muted">${timeAgo}</small>
-                                            </div>
-                                            <p class="mb-0 text-muted" style="font-size: 0.85rem;">
-                                                ${notif.message}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </a>
-                            `;
-                        });
-                        
-                        html += '</div>';
-                        container.innerHTML = html;
-                    } else {
-                        container.innerHTML = `
-                            <div class="text-center py-4">
-                                <i class="fas fa-bell-slash fa-2x text-muted mb-2"></i>
-                                <p class="text-muted mb-0">Aucune notification</p>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Erreur chargement notifications:', error);
-                    container.innerHTML = `
-                        <div class="text-center py-4">
-                            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
-                            <p class="text-muted mb-0">Erreur de chargement</p>
-                        </div>
-                    `;
-                });
-        }
-
-        // Marquer une notification comme lue
-        function marquerNotificationLue(notificationId, event) {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            
-            fetch(`/api/notifications/${notificationId}/marquer-lue`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        chargerNotificationsDropdown();
-                        actualiserBadgeNotifications();
-                    }
-                })
-                .catch(error => console.error('Erreur:', error));
-        }
-
-        // Marquer toutes les notifications comme lues
-        function marquerToutesLues() {
-            if (!confirm('Marquer toutes les notifications comme lues ?')) return;
-            
-            fetch('/api/notifications/marquer-toutes-lues', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        chargerNotificationsDropdown();
-                        actualiserBadgeNotifications();
-                        showToast('Toutes les notifications ont été marquées comme lues', 'success');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erreur:', error);
-                    showToast('Erreur lors du traitement', 'error');
-                });
-        }
-
-        // Mettre à jour le badge de notifications
-        function actualiserBadgeNotifications() {
-            fetch('/api/notifications/count')
-                .then(response => response.json())
-                .then(data => {
-                    const dropdown = document.getElementById('notificationsDropdown');
-                    if (!dropdown) return;
-                    
-                    let badge = dropdown.querySelector('.badge');
-                    
-                    if (data.count > 0) {
-                        if (!badge) {
-                            badge = document.createElement('span');
-                            badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge';
-                            dropdown.appendChild(badge);
-                        }
-                        badge.textContent = data.count;
-                        badge.style.display = 'inline-block';
-                        
-                        // Animation pour attirer l'attention
-                        const icon = dropdown.querySelector('i.fa-bell');
-                        if (icon) {
-                            icon.classList.add('text-warning', 'pulse-animation');
-                        }
-                    } else {
-                        if (badge) {
-                            badge.style.display = 'none';
-                        }
-                        const icon = dropdown.querySelector('i.fa-bell');
-                        if (icon) {
-                            icon.classList.remove('text-warning', 'pulse-animation');
-                        }
-                    }
-                })
-                .catch(error => console.error('Erreur badge notifications:', error));
-        }
-
-        // Formater le temps écoulé
-        function getTimeAgo(timestamp) {
-            if (!timestamp) return '';
-            const now = new Date();
-            const date = new Date(timestamp);
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMs / 3600000);
-            const diffDays = Math.floor(diffMs / 86400000);
-            
-            if (diffMins < 1) return 'À l\'instant';
-            if (diffMins < 60) return `${diffMins} min`;
-            if (diffHours < 24) return `${diffHours} h`;
-            if (diffDays < 7) return `${diffDays} j`;
-            return date.toLocaleDateString();
-        }
-
-        // ==================== INITIALISATION NOTIFICATIONS ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialiser le dropdown Bootstrap des notifications
-            const dropdownElement = document.getElementById('notificationsDropdown');
-            if (dropdownElement) {
-                const dropdown = new bootstrap.Dropdown(dropdownElement);
-                
-                // Charger les notifications quand le dropdown s'ouvre
-                dropdownElement.addEventListener('show.bs.dropdown', function() {
-                    chargerNotificationsDropdown();
-                });
-            }
-            
-            // Vérifier les nouvelles notifications toutes les 30 secondes
-            setInterval(actualiserBadgeNotifications, 30000);
-            
-            // Initialiser le badge
-            actualiserBadgeNotifications();
-            
-            // Vérifier les notifications immédiatement
-            setTimeout(actualiserBadgeNotifications, 1000);
-        });
-
         // ==================== GESTION DU MENU MOBILE ====================
-        // Fermer le menu mobile quand on clique sur un lien (sauf dropdowns)
+        // Fermer le menu mobile quand on clique sur un lien
         document.addEventListener('click', function(event) {
             if (isMobile && sidebarContainer.classList.contains('mobile-open')) {
                 const target = event.target;
-                // Vérifier si on clique sur un lien dans le menu
-                if (target.tagName === 'A' && !target.closest('.dropdown')) {
-                    // Attendre un peu pour que l'animation se fasse
+                if (target.tagName === 'A') {
                     setTimeout(closeMobileMenu, 300);
                 }
             }
-        });
-
-        // Gérer le clic sur les dropdowns dans le menu mobile
-        document.querySelectorAll('.sidebar-expanded .dropdown-toggle').forEach(toggle => {
-            toggle.addEventListener('click', function(e) {
-                if (isMobile) {
-                    // Sur mobile, empêcher la fermeture du menu quand on ouvre un dropdown
-                    e.stopPropagation();
-                }
-            });
-        });
-        
-        // Empêcher la fermeture du menu quand on clique dans le footer mobile
-        document.querySelector('.mobile-menu-footer')?.addEventListener('click', function(e) {
-            e.stopPropagation();
         });
     </script>
 
