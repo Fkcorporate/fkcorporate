@@ -608,6 +608,8 @@
                 -webkit-overflow-scrolling: touch;
                 will-change: transform;
                 transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                display: flex;
+                flex-direction: column;
             }
             
             [data-bs-theme="dark"] .sidebar-container {
@@ -630,11 +632,70 @@
                 display: flex !important;
                 flex-direction: column;
                 width: 100%;
-                padding: 1.5rem 0;
+                padding: 0;
+                flex: 1;
+                overflow-y: auto;
             }
             
             .sidebar-container .sidebar-expanded.hidden {
                 display: none !important;
+            }
+            
+            /* Menu étendu sur mobile - scrollable */
+            .sidebar-menu-expanded {
+                padding: 0 1rem;
+                flex: 1;
+                overflow-y: auto;
+                padding-bottom: 20px;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Section spéciale pour les actions de connexion en bas du menu mobile */
+            .mobile-auth-section {
+                display: flex !important;
+                flex-direction: column;
+                padding: 1rem;
+                border-top: 1px solid #e2e8f0;
+                background: white;
+                position: sticky;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 10;
+                margin-top: auto;
+            }
+            
+            [data-bs-theme="dark"] .mobile-auth-section {
+                border-top-color: #334155;
+                background: #1E293B;
+            }
+            
+            .mobile-auth-section .nav-link {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 0.75rem 1rem;
+                border-radius: var(--radius-md);
+                text-decoration: none;
+                margin-bottom: 0.5rem;
+                background: var(--fk-platinum);
+                color: var(--fk-steel);
+                transition: var(--transition-smooth);
+            }
+            
+            [data-bs-theme="dark"] .mobile-auth-section .nav-link {
+                background: #334155;
+                color: #E2E8F0;
+            }
+            
+            .mobile-auth-section .nav-link:hover {
+                background: var(--fk-accent);
+                color: white;
+            }
+            
+            .mobile-auth-section .nav-link.active {
+                background: var(--accent-gradient);
+                color: white;
             }
             
             .main-content {
@@ -681,8 +742,35 @@
                 white-space: nowrap;
             }
             
-            .navbar-nav .nav-link span:not(.vue-client-label) {
-                display: none;
+            /* Afficher les boutons de connexion/déconnexion dans la navbar sur mobile */
+            .navbar-nav .nav-link span {
+                display: inline-flex !important;
+                max-width: 100px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            
+            /* Cacher les menus déroulants complexes dans la navbar sur mobile */
+            .navbar-nav .nav-item.dropdown:not(.user-dropdown) {
+                display: none !important;
+            }
+            
+            /* Afficher le menu utilisateur */
+            .navbar-nav .user-dropdown {
+                display: flex !important;
+            }
+            
+            /* Menu user sur mobile - restructuré */
+            .navbar-nav .dropdown-menu {
+                position: fixed !important;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) !important;
+                width: 90% !important;
+                max-width: 400px;
+                max-height: 80vh;
+                overflow-y: auto;
             }
             
             .vue-client-label {
@@ -777,6 +865,8 @@
             footer {
                 padding: 1rem 0;
                 font-size: 0.85rem;
+                position: relative;
+                z-index: 1;
             }
             
             footer .row {
@@ -797,7 +887,59 @@
             
             /* Ajuster la hauteur du contenu */
             .main-content {
-                min-height: calc(100vh - 64px - 60px); /* 60px pour le footer */
+                min-height: calc(100vh - 64px - 60px); /* 64px navbar + 60px footer */
+                padding-bottom: 80px; /* Espace pour le bouton mobile */
+            }
+            
+            /* Améliorer la visibilité du header mobile */
+            .mobile-menu-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid #e2e8f0;
+                margin-bottom: 1rem;
+                background: white;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+            
+            [data-bs-theme="dark"] .mobile-menu-header {
+                border-bottom-color: #334155;
+                background: #1E293B;
+            }
+            
+            .mobile-menu-header h5 {
+                margin: 0;
+                font-weight: 600;
+                font-size: 1.1rem;
+            }
+            
+            .mobile-menu-close {
+                background: none;
+                border: none;
+                color: var(--fk-steel);
+                font-size: 1.25rem;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+            
+            [data-bs-theme="dark"] .mobile-menu-close {
+                color: #E2E8F0;
+            }
+            
+            .mobile-menu-close:hover {
+                background: var(--fk-platinum);
+            }
+            
+            [data-bs-theme="dark"] .mobile-menu-close:hover {
+                background: #334155;
             }
         }
 
@@ -841,6 +983,15 @@
             .fk-table td {
                 padding: 0.75rem 0.5rem;
             }
+            
+            .mobile-auth-section {
+                padding: 0.75rem;
+            }
+            
+            .mobile-auth-section .nav-link {
+                padding: 0.625rem 0.75rem;
+                font-size: 0.9rem;
+            }
         }
 
         /* Styles pour les tablettes */
@@ -855,6 +1006,10 @@
             
             .navbar-brand-fk span {
                 max-width: 250px;
+            }
+            
+            .mobile-auth-section {
+                padding: 1.25rem;
             }
         }
 
@@ -1074,73 +1229,17 @@
             border-left: 3px solid #3B82F6;
         }
         
-        /* Amélioration de la visibilité mobile */
-        .mobile-menu-header {
-            display: none;
-        }
-        
-        @media (max-width: 991.98px) {
-            .mobile-menu-header {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 1rem 1.5rem;
-                border-bottom: 1px solid #e2e8f0;
-                margin-bottom: 1.5rem;
-            }
-            
-            [data-bs-theme="dark"] .mobile-menu-header {
-                border-bottom-color: #334155;
-            }
-            
-            .mobile-menu-header h5 {
-                margin: 0;
-                font-weight: 600;
-            }
-            
-            .mobile-menu-close {
-                background: none;
-                border: none;
-                color: var(--fk-steel);
-                font-size: 1.25rem;
-                width: 40px;
-                height: 40px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 8px;
-            }
-            
-            [data-bs-theme="dark"] .mobile-menu-close {
-                color: #E2E8F0;
-            }
-            
-            .mobile-menu-close:hover {
-                background: var(--fk-platinum);
-            }
-            
-            [data-bs-theme="dark"] .mobile-menu-close:hover {
-                background: #334155;
-            }
-            
-            /* Améliorer la lisibilité sur mobile */
-            .sidebar-menu-expanded .nav-link {
-                font-size: 1rem;
-                padding: 1rem;
-            }
-            
-            .sidebar-heading {
-                font-size: 0.8rem;
-                margin-bottom: 0.75rem;
-            }
-        }
-        
         /* Empêcher le défilement du body quand le menu est ouvert */
         body.menu-open {
             overflow: hidden;
             position: fixed;
             width: 100%;
             height: 100%;
+        }
+        
+        /* Menu utilisateur simplifié pour mobile */
+        .user-dropdown-mobile .dropdown-menu {
+            max-width: 300px;
         }
     </style>
 </head>
@@ -1172,8 +1271,8 @@
             <!-- Menu utilisateur avec Actions Rapides et Paramétrage -->
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <!-- Menu Actions Rapides -->
-                    <li class="nav-item dropdown">
+                    <!-- Menu Actions Rapides (Desktop seulement) -->
+                    <li class="nav-item dropdown d-none d-lg-block">
                         <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2" href="#" 
                            role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-bolt"></i>
@@ -1253,9 +1352,9 @@
                         </ul>
                     </li>
 
-                    <!-- Menu Paramétrage (visible uniquement pour les utilisateurs autorisés) -->
+                    <!-- Menu Paramétrage (Desktop seulement) -->
                     {% if current_user.has_permission('can_manage_settings') %}
-                    <li class="nav-item dropdown">
+                    <li class="nav-item dropdown d-none d-lg-block">
                         <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2" href="#" 
                            role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-cogs"></i>
@@ -1302,8 +1401,8 @@
                     </li>
                     {% endif %}
 
-                    <!-- NOTIFICATIONS DROPDOWN -->
-                    <li class="nav-item dropdown">
+                    <!-- NOTIFICATIONS DROPDOWN (Desktop seulement) -->
+                    <li class="nav-item dropdown d-none d-lg-block">
                         <a class="nav-link dropdown-toggle text-white position-relative" 
                         href="#" role="button" data-bs-toggle="dropdown" 
                         id="notificationsDropdown" aria-expanded="false">
@@ -1335,9 +1434,9 @@
                         </ul>
                     </li>
 
-                    <!-- Vue Client Dropdown -->
+                    <!-- Vue Client Dropdown (Desktop seulement) -->
                     {% if current_user.is_authenticated %}
-                    <li class="nav-item dropdown">
+                    <li class="nav-item dropdown d-none d-lg-block">
                         <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2 vue-client-active" 
                            href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-eye"></i>
@@ -1395,137 +1494,166 @@
 
                     <!-- Menu utilisateur -->
                     {% if current_user.is_authenticated %}
-                    <li class="nav-item dropdown">
+                    <li class="nav-item dropdown user-dropdown">
                         <a class="nav-link dropdown-toggle text-white d-flex align-items-center gap-2" href="#" 
                            role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle"></i>
-                            <span>{{ current_user.username }}</span>
+                            <span class="d-none d-md-inline">{{ current_user.username|truncate(15) }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <!-- Informations utilisateur -->
-                            <li>
-                                <span class="dropdown-item text-muted">
-                                    <i class="fas fa-user-tag me-2"></i>
-                                    {{ current_user.get_role_display_name() }}
-                                    {% if current_user.client %}
-                                    <br><small>{{ current_user.client.nom }}</small>
-                                    {% endif %}
-                                </span>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
+                            <!-- Version mobile simplifiée -->
+                            <div class="d-lg-none">
+                                <li>
+                                    <span class="dropdown-item text-muted small">
+                                        <i class="fas fa-user-tag me-2"></i>
+                                        {{ current_user.get_role_display_name() }}
+                                        {% if current_user.client %}
+                                        <br><small>{{ current_user.client.nom|truncate(20) }}</small>
+                                        {% endif %}
+                                    </span>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('profil_utilisateur') }}">
+                                        <i class="fas fa-user-edit me-2"></i>
+                                        Mon profil
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>
+                                        Déconnexion
+                                    </a>
+                                </li>
+                            </div>
                             
-                            <!-- SECTION SUPER ADMIN -->
-                            {% if current_user.role == 'super_admin' %}
-                            <li>
-                                <a class="dropdown-item super-admin-highlight" href="{{ url_for('super_admin_dashboard') }}">
-                                    <i class="fas fa-crown me-2 super-admin-icon"></i>
-                                    Dashboard Super Admin
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item super-admin-highlight" href="{{ url_for('super_admin_clients') }}">
-                                    <i class="fas fa-building me-2 super-admin-icon"></i>
-                                    Gestion Clients
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item super-admin-highlight" href="{{ url_for('super_admin_formules') }}">
-                                    <i class="fas fa-layer-group me-2 super-admin-icon"></i>
-                                    Formules d'abonnement
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item super-admin-highlight" href="{{ url_for('admin_utilisateurs') }}">
-                                    <i class="fas fa-users me-2 super-admin-icon"></i>
-                                    Tous les Utilisateurs
-                                </a>
-                            </li>
-                            
-                            {% if current_user.username == 'fabricekonan' %}
-                            <li>
-                                <a class="dropdown-item super-admin-highlight" href="{{ url_for('super_admin_management') }}">
-                                    <i class="fas fa-user-shield me-2 super-admin-icon"></i>
-                                    Gestion Super Admins
-                                </a>
-                            </li>
-                            {% endif %}
-                            
-                            <li><hr class="dropdown-divider super-admin-border"></li>
-                            
-                            <!-- SECTION ADMIN CLIENT ET GESTIONNAIRES -->
-                            {% elif (current_user.role == 'admin' and current_user.is_client_admin) or current_user.can_manage_users %}
-                            <li>
-                                {% if current_user.is_client_admin %}
-                                <a class="dropdown-item" href="{{ url_for('client_admin_dashboard') }}">
-                                    <i class="fas fa-tachometer-alt me-2"></i>
-                                    Dashboard Admin Client
-                                </a>
+                            <!-- Version desktop complète -->
+                            <div class="d-none d-lg-block">
+                                <li>
+                                    <span class="dropdown-item text-muted">
+                                        <i class="fas fa-user-tag me-2"></i>
+                                        {{ current_user.get_role_display_name() }}
+                                        {% if current_user.client %}
+                                        <br><small>{{ current_user.client.nom }}</small>
+                                        {% endif %}
+                                    </span>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                
+                                <!-- SECTION SUPER ADMIN -->
+                                {% if current_user.role == 'super_admin' %}
+                                <li>
+                                    <a class="dropdown-item super-admin-highlight" href="{{ url_for('super_admin_dashboard') }}">
+                                        <i class="fas fa-crown me-2 super-admin-icon"></i>
+                                        Dashboard Super Admin
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item super-admin-highlight" href="{{ url_for('super_admin_clients') }}">
+                                        <i class="fas fa-building me-2 super-admin-icon"></i>
+                                        Gestion Clients
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item super-admin-highlight" href="{{ url_for('super_admin_formules') }}">
+                                        <i class="fas fa-layer-group me-2 super-admin-icon"></i>
+                                        Formules d'abonnement
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item super-admin-highlight" href="{{ url_for('admin_utilisateurs') }}">
+                                        <i class="fas fa-users me-2 super-admin-icon"></i>
+                                        Tous les Utilisateurs
+                                    </a>
+                                </li>
+                                
+                                {% if current_user.username == 'fabricekonan' %}
+                                <li>
+                                    <a class="dropdown-item super-admin-highlight" href="{{ url_for('super_admin_management') }}">
+                                        <i class="fas fa-user-shield me-2 super-admin-icon"></i>
+                                        Gestion Super Admins
+                                    </a>
+                                </li>
                                 {% endif %}
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{% if current_user.is_client_admin %}{{ url_for('client_admin_utilisateurs') }}{% else %}{{ url_for('gestionnaire_utilisateurs') }}{% endif %}">
-                                    <i class="fas fa-users me-2"></i>
-                                    {% if current_user.is_client_admin %}Utilisateurs du Client{% else %}Gérer les Utilisateurs{% endif %}
-                                </a>
-                            </li>
-                            <!-- BOUTON CRÉER UN UTILISATEUR POUR GESTIONNAIRES -->
-                            {% if current_user.has_permission('can_create_users') %}
-                            <li>
-                                <a class="dropdown-item text-primary fw-semibold" href="{% if current_user.is_client_admin %}{{ url_for('client_admin_creer_utilisateur') }}{% else %}{{ url_for('gestionnaire_creer_utilisateur') }}{% endif %}">
-                                    <i class="fas fa-user-plus me-2"></i>
-                                    Créer un utilisateur
-                                </a>
-                            </li>
-                            {% endif %}
-                            <!-- BOUTON CRÉER UN GESTIONNAIRE (SEULEMENT POUR CLIENT_ADMIN) -->
-                            {% if current_user.is_client_admin %}
-                            <li>
-                                <a class="dropdown-item text-warning fw-semibold" href="{{ url_for('client_admin_creer_gestionnaire') }}">
-                                    <i class="fas fa-user-shield me-2"></i>
-                                    Créer un gestionnaire
-                                </a>
-                            </li>
-                            {% endif %}
-                            <li><hr class="dropdown-divider"></li>
-                            {% endif %}
-                            
-                            <!-- SECTION UTILISATEURS NORMAUX (tous) -->
-                            
-                            <!-- Mon Profil -->
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('profil_utilisateur') }}">
-                                    <i class="fas fa-user-edit me-2"></i>
-                                    Mon profil
-                                </a>
-                            </li>
-                            
-                            <!-- Directions & Services (si permission) -->
-                            {% if current_user.has_permission('can_view_departments') %}
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('admin_directions') }}">
-                                    <i class="fas fa-sitemap me-2"></i>
-                                    Directions & Services
-                                </a>
-                            </li>
-                            {% endif %}
-                            
-                            <!-- Séparateur avant déconnexion -->
-                            <li><hr class="dropdown-divider"></li>
-                            
-                            <!-- Déconnexion -->
-                            <li>
-                                <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
-                                    <i class="fas fa-sign-out-alt me-2"></i>
-                                    Déconnexion
-                                </a>
-                            </li>
+                                
+                                <li><hr class="dropdown-divider super-admin-border"></li>
+                                
+                                <!-- SECTION ADMIN CLIENT ET GESTIONNAIRES -->
+                                {% elif (current_user.role == 'admin' and current_user.is_client_admin) or current_user.can_manage_users %}
+                                <li>
+                                    {% if current_user.is_client_admin %}
+                                    <a class="dropdown-item" href="{{ url_for('client_admin_dashboard') }}">
+                                        <i class="fas fa-tachometer-alt me-2"></i>
+                                        Dashboard Admin Client
+                                    </a>
+                                    {% endif %}
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% if current_user.is_client_admin %}{{ url_for('client_admin_utilisateurs') }}{% else %}{{ url_for('gestionnaire_utilisateurs') }}{% endif %}">
+                                        <i class="fas fa-users me-2"></i>
+                                        {% if current_user.is_client_admin %}Utilisateurs du Client{% else %}Gérer les Utilisateurs{% endif %}
+                                    </a>
+                                </li>
+                                <!-- BOUTON CRÉER UN UTILISATEUR POUR GESTIONNAIRES -->
+                                {% if current_user.has_permission('can_create_users') %}
+                                <li>
+                                    <a class="dropdown-item text-primary fw-semibold" href="{% if current_user.is_client_admin %}{{ url_for('client_admin_creer_utilisateur') }}{% else %}{{ url_for('gestionnaire_creer_utilisateur') }}{% endif %}">
+                                        <i class="fas fa-user-plus me-2"></i>
+                                        Créer un utilisateur
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <!-- BOUTON CRÉER UN GESTIONNAIRE (SEULEMENT POUR CLIENT_ADMIN) -->
+                                {% if current_user.is_client_admin %}
+                                <li>
+                                    <a class="dropdown-item text-warning fw-semibold" href="{{ url_for('client_admin_creer_gestionnaire') }}">
+                                        <i class="fas fa-user-shield me-2"></i>
+                                        Créer un gestionnaire
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                
+                                <!-- SECTION UTILISATEURS NORMAUX (tous) -->
+                                
+                                <!-- Mon Profil -->
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('profil_utilisateur') }}">
+                                        <i class="fas fa-user-edit me-2"></i>
+                                        Mon profil
+                                    </a>
+                                </li>
+                                
+                                <!-- Directions & Services (si permission) -->
+                                {% if current_user.has_permission('can_view_departments') %}
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('admin_directions') }}">
+                                        <i class="fas fa-sitemap me-2"></i>
+                                        Directions & Services
+                                    </a>
+                                </li>
+                                {% endif %}
+                                
+                                <!-- Séparateur avant déconnexion -->
+                                <li><hr class="dropdown-divider"></li>
+                                
+                                <!-- Déconnexion -->
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>
+                                        Déconnexion
+                                    </a>
+                                </li>
+                            </div>
                         </ul>
                     </li>
                     {% else %}
+                    <!-- Connexion -->
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ url_for('login') }}">
-                            <i class="fas fa-sign-in-alt me-2"></i>
-                            Connexion
+                        <a class="nav-link text-white d-flex align-items-center gap-2" href="{{ url_for('login') }}">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Connexion</span>
                         </a>
                     </li>
                     {% endif %}
@@ -1639,7 +1767,7 @@
         <div class="sidebar-expanded hidden" id="sidebarExpanded">
             <!-- Header mobile pour la sidebar étendue -->
             <div class="mobile-menu-header d-lg-none">
-                <h5 class="mb-0">Navigation</h5>
+                <h5 class="mb-0">Menu Principal</h5>
                 <button class="mobile-menu-close" id="mobileMenuClose">
                     <i class="fas fa-times"></i>
                 </button>
@@ -1827,6 +1955,41 @@
                 </div>
                 {% endif %}
             </nav>
+            
+            <!-- Section connexion/déconnexion en bas du menu mobile -->
+            <div class="mobile-auth-section d-lg-none">
+                {% if current_user.is_authenticated %}
+                    <!-- Informations utilisateur -->
+                    <div class="mb-3 p-2 bg-light rounded">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-user-circle text-primary"></i>
+                            <div>
+                                <div class="fw-semibold">{{ current_user.username }}</div>
+                                <small class="text-muted">{{ current_user.get_role_display_name() }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Profil utilisateur -->
+                    <a class="nav-link {% if request.endpoint == 'profil_utilisateur' %}active{% endif %}" 
+                       href="{{ url_for('profil_utilisateur') }}">
+                        <i class="fas fa-user-edit"></i>
+                        Mon profil
+                    </a>
+                    
+                    <!-- Déconnexion -->
+                    <a class="nav-link text-danger" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Déconnexion
+                    </a>
+                {% else %}
+                    <!-- Connexion -->
+                    <a class="nav-link" href="{{ url_for('login') }}">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Connexion
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 
@@ -1930,12 +2093,6 @@
                 sidebarOverlay.classList.remove('show');
                 sidebarExpanded.classList.remove('hidden');
                 sidebarCompact.classList.add('hidden');
-                
-                // Cacher la sidebar étendue desktop
-                const sidebarExpandedDesktop = document.querySelector('.sidebar-expanded');
-                if (sidebarExpandedDesktop) {
-                    sidebarExpandedDesktop.classList.remove('hidden');
-                }
             }
             
             // Mettre à jour l'icône du burger
@@ -2035,6 +2192,10 @@
             document.body.classList.add('menu-open');
             mobileSidebarToggle.classList.add('active');
             mobileSidebarToggle.innerHTML = '<i class="fas fa-times"></i>';
+            
+            // Bloquer le scroll du body
+            document.body.style.overflow = 'hidden';
+            document.body.style.height = '100%';
         }
 
         // Fermer le menu mobile
@@ -2045,6 +2206,10 @@
             document.body.classList.remove('menu-open');
             mobileSidebarToggle.classList.remove('active');
             mobileSidebarToggle.innerHTML = '<i class="fas fa-bars"></i>';
+            
+            // Restaurer le scroll du body
+            document.body.style.overflow = '';
+            document.body.style.height = '';
         }
 
         // Toggle mobile menu
@@ -2091,11 +2256,6 @@
             const icon = themeToggle.querySelector('i');
             icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
             localStorage.setItem('fkTheme', theme);
-            
-            document.body.style.color = theme === 'dark' ? '#E2E8F0' : '#1E293B';
-            document.querySelectorAll('.main-content').forEach(el => {
-                el.style.color = theme === 'dark' ? '#E2E8F0' : '#1E293B';
-            });
         }
 
         // Initialiser le thème
@@ -2475,6 +2635,23 @@
                     e.stopPropagation();
                 }
             });
+        });
+
+        // Améliorer le scroll sur mobile
+        document.addEventListener('touchmove', function(e) {
+            if (isMobile && sidebarContainer.classList.contains('mobile-open')) {
+                // Si on scroll dans le menu, ne pas permettre le scroll du body
+                if (e.target.closest('.sidebar-container')) {
+                    e.preventDefault();
+                }
+            }
+        }, { passive: false });
+
+        // Fermer le menu mobile avec la touche Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sidebarContainer.classList.contains('mobile-open')) {
+                closeMobileMenu();
+            }
         });
     </script>
 
