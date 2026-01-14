@@ -611,6 +611,8 @@
             overflow: hidden;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            cursor: pointer;
         }
         
         .dashboard-image img {
@@ -622,6 +624,189 @@
         
         .dashboard-image:hover img {
             transform: scale(1.02);
+        }
+        
+        /* Styles pour le slideshow du dashboard */
+        .dashboard-slideshow {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .slideshow-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            overflow: hidden;
+        }
+        
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-navy);
+        }
+        
+        .slide.active {
+            opacity: 1;
+        }
+        
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 20px;
+            background: var(--primary-navy);
+        }
+        
+        .slide-nav {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .slide-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            padding: 0;
+        }
+        
+        .slide-dot.active {
+            background: var(--accent-blue);
+            transform: scale(1.2);
+        }
+        
+        .slide-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 102, 204, 0.7);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .slide-arrow:hover {
+            background: var(--accent-blue);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .slide-arrow.prev {
+            left: 20px;
+        }
+        
+        .slide-arrow.next {
+            right: 20px;
+        }
+        
+        .fullscreen-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .fullscreen-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+        
+        /* Modal pour image en plein écran */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .image-modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            background: var(--primary-navy);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .modal-content img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .close-modal:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
         }
         
         /* ===== AI CAPABILITIES SECTION ===== */
@@ -1066,6 +1251,10 @@
             .video-preview {
                 height: 400px;
             }
+            
+            .slideshow-container {
+                height: 350px;
+            }
         }
         
         /* ===== CORRECTIONS MOBILE COMPLÈTES ===== */
@@ -1279,6 +1468,33 @@
                 gap: 0.5rem !important;
             }
             
+            /* Slideshow mobile */
+            .slideshow-container {
+                height: 250px;
+            }
+            
+            .slide-arrow {
+                width: 35px;
+                height: 35px;
+                font-size: 0.875rem;
+            }
+            
+            .slide-arrow.prev {
+                left: 10px;
+            }
+            
+            .slide-arrow.next {
+                right: 10px;
+            }
+            
+            .fullscreen-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 0.875rem;
+                top: 10px;
+                right: 10px;
+            }
+            
             /* Dashboard stats mobile */
             .dashboard-preview > div:last-child {
                 flex-direction: column;
@@ -1473,6 +1689,17 @@
                 font-size: 1.25rem;
             }
             
+            /* Slideshow très petits écrans */
+            .slideshow-container {
+                height: 200px;
+            }
+            
+            .slide-arrow {
+                width: 30px;
+                height: 30px;
+                font-size: 0.75rem;
+            }
+            
             /* Correction pour les cartes features */
             .feature-icon {
                 width: 50px;
@@ -1566,6 +1793,16 @@
     <!-- Overlay pour menu mobile -->
     <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 
+    <!-- Modal pour image en plein écran -->
+    <div class="image-modal" id="imageModal">
+        <div class="modal-content">
+            <button class="close-modal" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="modalImage" src="" alt="Image en plein écran">
+        </div>
+    </div>
+
     <!-- Hero Section -->
     <section class="hero-section" id="home">
         <div class="container">
@@ -1612,10 +1849,14 @@
                             </div>
                         </div>
                         
-                        <div class="dashboard-image">
+                        <!-- MODIFICATION: Image cliquable pour l'agrandir -->
+                        <div class="dashboard-image" id="heroDashboardImage">
                             <img src="/static/images/dashboard-preview.png" 
                                 alt="Tableau de bord exécutif FK Corporate Intelligence"
                                 class="img-fluid">
+                            <div class="fullscreen-btn" onclick="openImageModal('/static/images/dashboard-preview.png')">
+                                <i class="fas fa-expand"></i>
+                            </div>
                         </div>
                         
                         <div style="display: flex; justify-content: space-around; padding: 2rem; 
@@ -1676,22 +1917,22 @@
             <div class="video-container" data-aos="fade-up">
                 <div class="video-preview">
                     <!-- Overlay avec bouton play -->
-                    <div class="video-overlay" id="videoOverlay">
+                    <div class="video-overlay" id="videoOverlay" style="display: none;">
                         <div class="play-button" id="playButton">
                             <i class="fas fa-play"></i>
                         </div>
                     </div>
                     
-                    <!-- Lecteur vidéo HTML5 -->
+                    <!-- Lecteur vidéo HTML5 - MODIFICATION: autoplay ajouté -->
                     <video id="demoVideo" class="video-player" width="100%" height="100%" 
-                        poster="/static/images/video-thumbnail.jpg" style="display: none;"
-                        playsinline webkit-playsinline>
+                        poster="/static/images/video-thumbnail.jpg" style="display: block;"
+                        autoplay muted playsinline webkit-playsinline loop>
                         <source src="/static/videos/presentation-platforme.mp4" type="video/mp4">
                         Votre navigateur ne supporte pas la lecture de vidéos HTML5.
                     </video>
                     
-                    <!-- Image de placeholder (affichée par défaut) -->
-                    <div id="videoPlaceholder" style="text-align: center; color: var(--neutral-grey); padding: 2rem;">
+                    <!-- Image de placeholder (affichée par défaut) - MODIFICATION: masqué par défaut -->
+                    <div id="videoPlaceholder" style="text-align: center; color: var(--neutral-grey); padding: 2rem; display: none;">
                         <i class="fas fa-video fa-4x mb-3" style="opacity: 0.3;"></i>
                         <h3 style="color: var(--neutral-white); margin-bottom: 1rem;">Présentation de la Plateforme</h3>
                         <p>Cliquez pour voir la démonstration</p>
@@ -1948,10 +2189,40 @@
                     </div>
                 </div>
                 
-                <div class="dashboard-image">
-                    <img src="/static/images/dashboard-preview.png" 
-                        alt="Interface exécutive FK Corporate Intelligence"
-                        class="img-fluid">
+                <!-- MODIFICATION: Remplacement de l'image unique par un slideshow -->
+                <div class="dashboard-slideshow">
+                    <div class="slideshow-container" id="slideshowContainer">
+                        <!-- Slide 1 -->
+                        <div class="slide active" data-slide="1">
+                            <img src="/static/images/dashboard-preview.png" 
+                                alt="Interface exécutive FK Corporate Intelligence - Vue principale">
+                        </div>
+                        
+                        <!-- Slide 2 -->
+                        <div class="slide" data-slide="2">
+                            <img src="/static/images/dashboard-analytics.png" 
+                                alt="Interface exécutive FK Corporate Intelligence - Vue analytique">
+                        </div>
+                    </div>
+                    
+                    <!-- Boutons de navigation -->
+                    <button class="slide-arrow prev" onclick="changeSlide(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="slide-arrow next" onclick="changeSlide(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    
+                    <!-- Bouton plein écran -->
+                    <button class="fullscreen-btn" onclick="openCurrentSlide()">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    
+                    <!-- Points de navigation -->
+                    <div class="slide-nav">
+                        <button class="slide-dot active" onclick="goToSlide(1)"></button>
+                        <button class="slide-dot" onclick="goToSlide(2)"></button>
+                    </div>
                 </div>
                 
                 <div style="display: flex; justify-content: space-around; padding: 2rem; 
@@ -2330,90 +2601,144 @@
             });
         });
         
-        // Video play function
-        function playDemoVideo() {
+        // MODIFICATION: Vidéo qui se lance automatiquement
+        function initVideo() {
             const video = document.getElementById('demoVideo');
             const videoOverlay = document.getElementById('videoOverlay');
             const videoPlaceholder = document.getElementById('videoPlaceholder');
             const playButton = document.getElementById('playButton');
             
-            // Masquer le placeholder et l'overlay
+            // Masquer le placeholder et overlay par défaut
             videoPlaceholder.style.display = 'none';
             videoOverlay.style.display = 'none';
             video.style.display = 'block';
             
-            // Démarrer la vidéo
-            video.play();
+            // Configurer la vidéo pour autoplay
+            video.autoplay = true;
+            video.muted = true; // Nécessaire pour autoplay sur la plupart des navigateurs
+            video.loop = true;
+            video.playsInline = true;
+            video.setAttribute('playsinline', '');
+            video.setAttribute('webkit-playsinline', '');
             
-            // Mettre à jour le bouton play pour pause
-            playButton.innerHTML = '<i class="fas fa-pause"></i>';
-            playButton.onclick = pauseVideo;
+            // Essayer de jouer la vidéo
+            const playPromise = video.play();
             
-            // Afficher les contrôles vidéo
-            video.setAttribute('controls', 'controls');
-        }
-
-        function pauseVideo() {
-            const video = document.getElementById('demoVideo');
-            const playButton = document.getElementById('playButton');
-            
-            if (video.paused) {
-                video.play();
-                playButton.innerHTML = '<i class="fas fa-pause"></i>';
-            } else {
-                video.pause();
-                playButton.innerHTML = '<i class="fas fa-play"></i>';
-            }
-        }
-
-        function restartVideo() {
-            const video = document.getElementById('demoVideo');
-            const videoOverlay = document.getElementById('videoOverlay');
-            const videoPlaceholder = document.getElementById('videoPlaceholder');
-            
-            // Réinitialiser la vidéo
-            video.pause();
-            video.currentTime = 0;
-            
-            // Réafficher l'overlay et le placeholder
-            video.style.display = 'none';
-            videoOverlay.style.display = 'flex';
-            videoPlaceholder.style.display = 'block';
-            
-            // Retirer les contrôles
-            video.removeAttribute('controls');
-        }
-        
-        // Setup video controls
-        const playButton = document.getElementById('playButton');
-        const videoOverlay = document.getElementById('videoOverlay');
-        
-        if (playButton && videoOverlay) {
-            playButton.addEventListener('click', playDemoVideo);
-            videoOverlay.addEventListener('click', playDemoVideo);
-        }
-        
-        // Gestion de la fin de vidéo
-        const video = document.getElementById('demoVideo');
-        if (video) {
-            video.addEventListener('ended', function() {
-                const playButton = document.getElementById('playButton');
-                if (playButton) {
-                    playButton.innerHTML = '<i class="fas fa-redo"></i>';
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    // Vidéo jouée avec succès
+                    console.log('Vidéo lancée automatiquement');
+                }).catch(error => {
+                    // Autoplay bloqué, afficher l'overlay
+                    console.log('Autoplay bloqué, affichage de l\'overlay');
+                    videoOverlay.style.display = 'flex';
+                    video.muted = false; // Démuter pour permettre le son quand l'utilisateur clique
+                    video.loop = false; // Ne pas boucler en mode manuel
+                    
+                    // Configurer le bouton play
+                    playButton.innerHTML = '<i class="fas fa-play"></i>';
                     playButton.onclick = function() {
-                        this.innerHTML = '<i class="fas fa-pause"></i>';
-                        this.onclick = pauseVideo;
-                        video.currentTime = 0;
+                        videoOverlay.style.display = 'none';
+                        video.play();
+                        video.setAttribute('controls', 'controls');
+                    };
+                });
+            }
+            
+            // Gestion de la fin de vidéo
+            video.addEventListener('ended', function() {
+                // Rejouer la vidéo automatiquement
+                this.currentTime = 0;
+                this.play();
+            });
+            
+            // Ajouter des contrôles pour permettre à l'utilisateur de mettre en pause
+            video.addEventListener('click', function() {
+                if (video.paused) {
+                    video.play();
+                } else {
+                    video.pause();
+                    // Afficher l'overlay avec bouton play quand en pause
+                    videoOverlay.style.display = 'flex';
+                    playButton.innerHTML = '<i class="fas fa-play"></i>';
+                    playButton.onclick = function() {
+                        videoOverlay.style.display = 'none';
                         video.play();
                     };
                 }
             });
-            
-            // Config pour mobile
-            video.playsInline = true;
-            video.setAttribute('playsinline', '');
-            video.setAttribute('webkit-playsinline', '');
         }
+        
+        // MODIFICATION: Gestion du slideshow
+        let currentSlide = 1;
+        const totalSlides = 2;
+        
+        function changeSlide(direction) {
+            const newSlide = currentSlide + direction;
+            if (newSlide < 1) {
+                goToSlide(totalSlides);
+            } else if (newSlide > totalSlides) {
+                goToSlide(1);
+            } else {
+                goToSlide(newSlide);
+            }
+        }
+        
+        function goToSlide(slideNumber) {
+            // Mettre à jour les slides
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+            
+            document.querySelector(`.slide[data-slide="${slideNumber}"]`).classList.add('active');
+            
+            // Mettre à jour les points de navigation
+            document.querySelectorAll('.slide-dot').forEach((dot, index) => {
+                dot.classList.remove('active');
+                if (index === slideNumber - 1) {
+                    dot.classList.add('active');
+                }
+            });
+            
+            currentSlide = slideNumber;
+        }
+        
+        function openCurrentSlide() {
+            const currentImage = document.querySelector(`.slide[data-slide="${currentSlide}"] img`).src;
+            openImageModal(currentImage);
+        }
+        
+        // MODIFICATION: Gestion du modal pour images en plein écran
+        const imageModal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const closeModal = document.getElementById('closeModal');
+        
+        function openImageModal(imageSrc) {
+            modalImage.src = imageSrc;
+            imageModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeImageModal() {
+            imageModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Fermer le modal avec la touche Échap
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && imageModal.classList.contains('active')) {
+                closeImageModal();
+            }
+        });
+        
+        // Fermer le modal en cliquant en dehors de l'image
+        imageModal.addEventListener('click', function(e) {
+            if (e.target === imageModal) {
+                closeImageModal();
+            }
+        });
+        
+        closeModal.addEventListener('click', closeImageModal);
         
         // Intersection Observer for counters
         const observer = new IntersectionObserver((entries) => {
@@ -2582,6 +2907,9 @@
         
         // Optimisations pour mobile
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialiser la vidéo
+            initVideo();
+            
             // Détection mobile
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             
@@ -2591,6 +2919,16 @@
                     el.addEventListener('focus', function() {
                         this.style.fontSize = '16px';
                     });
+                });
+            }
+            
+            // Ajouter la possibilité de cliquer sur l'image du dashboard dans la section hero
+            const heroDashboardImage = document.getElementById('heroDashboardImage');
+            if (heroDashboardImage) {
+                heroDashboardImage.addEventListener('click', function(e) {
+                    if (!e.target.classList.contains('fullscreen-btn')) {
+                        openImageModal('/static/images/dashboard-preview.png');
+                    }
                 });
             }
             
@@ -2618,6 +2956,35 @@
                     }
                 });
             });
+            
+            // Ajouter le slideshow automatique
+            let slideshowInterval;
+            
+            function startSlideshow() {
+                slideshowInterval = setInterval(() => {
+                    changeSlide(1);
+                }, 5000); // Change toutes les 5 secondes
+            }
+            
+            function stopSlideshow() {
+                clearInterval(slideshowInterval);
+            }
+            
+            // Démarrer le slideshow automatique
+            startSlideshow();
+            
+            // Arrêter le slideshow quand l'utilisateur interagit
+            const slideshowContainer = document.getElementById('slideshowContainer');
+            if (slideshowContainer) {
+                slideshowContainer.addEventListener('mouseenter', stopSlideshow);
+                slideshowContainer.addEventListener('mouseleave', startSlideshow);
+                
+                // Pour mobile: arrêter au toucher
+                slideshowContainer.addEventListener('touchstart', stopSlideshow);
+                slideshowContainer.addEventListener('touchend', function() {
+                    setTimeout(startSlideshow, 5000);
+                });
+            }
         });
         
         // Prévenir les gestes de zoom sur iOS
