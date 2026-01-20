@@ -3703,12 +3703,7 @@ class Client(db.Model):
         foreign_keys='User.client_id',
         overlaps="users",  # <-- AJOUTER
         lazy=True)
-    
-    # Assurez-vous que cette relation existe aussi :
-    users = db.relationship('User', 
-        back_populates='client',
-        foreign_keys='User.client_id',
-        lazy=True)
+
     utilisateurs = db.relationship('User', back_populates='client', lazy=True)
     environnements = db.relationship('EnvironnementClient', back_populates='client', lazy=True)
     
