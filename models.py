@@ -3686,7 +3686,6 @@ class Client(db.Model):
 
     # AJOUTER CES CHAMPS :
     formule_id = db.Column(db.Integer, db.ForeignKey('formules_abonnement.id'))
-    users = db.relationship('User', back_populates='client', lazy='dynamic')
 
     
     # AJOUTER CES RELATIONS :
