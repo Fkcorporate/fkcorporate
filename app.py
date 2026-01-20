@@ -13400,6 +13400,7 @@ def super_admin_clients():
     return render_template('super_admin/clients.html', clients=clients)
 
 @app.route('/super-admin/client/nouveau', methods=['GET', 'POST'])
+@csrf.exempt
 @login_required
 @super_admin_required
 def super_admin_nouveau_client():
