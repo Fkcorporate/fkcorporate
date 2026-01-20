@@ -50,6 +50,15 @@ print("⚠️ Flask-Mail désactivé - Utilisation de SMTP direct")
 app = Flask(__name__)
 app.config.from_object('config.Config')
 
+
+try:
+    import matplotlib
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
+    print("⚠️ matplotlib non disponible - certaines fonctionnalités graphiques désactivées")
+
+
 # ========================
 # IMPORT DE LA BASE DE DONNÉES (SANS FLASK-MAIL)
 # ========================
