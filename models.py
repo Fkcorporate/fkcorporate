@@ -2742,6 +2742,11 @@ class ElementLogigramme(db.Model):
     
     # Relations
     processus_activite = db.relationship('ProcessusActivite', back_populates='elements')
+        processus_activite = db.relationship('ProcessusActivite', 
+        back_populates='elements',
+        foreign_keys='ElementLogigramme.activite_id',
+        overlaps="processus_parent",  # <-- AJOUTER
+        lazy=True)
 
 class ParametreEvaluation(db.Model):
     """Stocke les paramètres d'évaluation"""
@@ -3682,6 +3687,17 @@ class Client(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relations
+    utilisateurs = db.relationship('User', 
+        back_populates='client',
+        foreign_keys='User.client_id',
+        overlaps="users",  # <-- AJOUTER
+        lazy=True)
+    
+    # Assurez-vous que cette relation existe aussi :
+    users = db.relationship('User', 
+        back_populates='client',
+        foreign_keys='User.client_id',
+        lazy=True)
     utilisateurs = db.relationship('User', back_populates='client', lazy=True)
     environnements = db.relationship('EnvironnementClient', back_populates='client', lazy=True)
     
