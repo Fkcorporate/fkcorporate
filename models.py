@@ -74,6 +74,20 @@ class User(UserMixin, db.Model):
             'module_plans_action': True,
             'module_analyse_ia': False
         })
+
+        # AJOUTER CETTE RELATION MANQUANTE :
+    audits_dont_je_suis_responsable = db.relationship('Audit', 
+        back_populates='responsable',
+        foreign_keys='Audit.responsable_id',
+        overlaps="audits_realises",  # <-- AJOUTER CETTE LIGNE
+        lazy=True)
+
+    # AJOUTER CETTE RELATION (elle semble manquante) :
+    processus_activites_crees = db.relationship('ProcessusActivite', 
+        back_populates='createur',
+        foreign_keys='ProcessusActivite.created_by',
+        overlaps="logigrammes_crees",  # <-- AJOUTER CETTE LIGNE
+        lazy=True)
     
     # Relations - CORRECTION : Spécifier foreign_keys
     directions_managees = db.relationship('Direction', 
