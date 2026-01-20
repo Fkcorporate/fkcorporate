@@ -21907,15 +21907,44 @@ def nouvelle_cartographie():
 
 
 
-
 @app.route('/kri/nouveau', methods=['GET'])
 @login_required
 def nouveau_kri_sans_risque():
     """Page pour choisir un risque avant de créer un KRI"""
-    # Rediriger vers une page de choix ou lister les risques disponibles
-    risques = Risque.query.filter_by(is_archived=False).all()
-    return render_template('kri/form.html', risques=risques)
-
+    
+    # 1. Récupérer les risques disponibles pour l'utilisateur
+    if current_user.role == 'super_admin':
+        risques = Risque.query.filter_by(is_archived=False).all()
+    else:
+        # Filtrer par client ou par créateur
+        if hasattr(current_user, 'client_id') and current_user.client_id:
+            risques = Risque.query.filter_by(
+                client_id=current_user.client_id,
+                is_archived=False
+            ).all()
+        else:
+            risques = Risque.query.filter_by(
+                created_by=current_user.id,
+                is_archived=False
+            ).all()
+    
+    # 2. Récupérer les utilisateurs pour le responsable
+    utilisateurs = User.query.filter_by(is_active=True).all()
+    
+    # DEBUG: Vérifier ce qui est récupéré
+    print(f"🔍 [DEBUG] nouveau_kri_sans_risque()")
+    print(f"   Nombre de risques: {len(risques)}")
+    print(f"   Nombre d'utilisateurs: {len(utilisateurs)}")
+    
+    # 3. Rendre le template AVEC TOUTES les variables nécessaires
+    return render_template('kri/form.html',
+                         action='creer',  # IMPORTANT: Spécifier l'action
+                         utilisateurs=utilisateurs,  # IMPORTANT: Pour le select responsable
+                         risques_disponibles=risques,  # IMPORTANT: Nom correct pour le template
+                         kri=None,  # Aucun KRI existant
+                         risque_id=None,  # Aucun risque présélectionné
+                         risque_associe=None)  # Aucun risque associé
+    
 @app.route('/api/services/<int:direction_id>')
 @login_required
 def api_services_par_direction(direction_id):
@@ -23561,43 +23590,98 @@ def liste_kri():
                          risques_disponibles=risques_disponibles,
                          datetime=datetime)
 
+@app.route('/kri/<int:kri_id>')
+@login_required
+def detail_kri_short(kri_id):
+    """Redirection vers la fiche détaillée d'un KRI (route courte)"""
+    return redirect(url_for('detail_kri', kri_id=kri_id))
+
 # ========================
 # ROUTES KRI CORRIGÉES
 # ========================
-
 @app.route('/kri/nouveau', methods=['GET'])
 @login_required
 def nouveau_kri_form():
-    """Afficher le formulaire de création d'un indicateur avec isolation"""
+    """Afficher le formulaire de création d'un indicateur"""
     
-    # CORRECTION : Récupérer les données filtrées par client
-    utilisateurs = get_client_filter(User).filter_by(is_active=True).all()
+    print(f"🔍 [DEBUG] Début nouveau_kri_form()")
+    print(f"   User: {current_user.username}, Role: {current_user.role}")
     
-    # CORRECTION IMPORTANTE : Filtrer les risques du client
-    risques_disponibles = get_client_filter(Risque).filter_by(is_archived=False).all()
+    # Créer le formulaire
+    from forms import KRIForm
+    form = KRIForm()
     
-    print(f"🔍 DEBUG: {len(risques_disponibles)} risques disponibles pour l'utilisateur {current_user.username}")
-    for risque in risques_disponibles:
-        print(f"   - {risque.reference}: {risque.intitule} (client_id: {risque.client_id})")
+    # Remplir les choix du formulaire
+    # 1. Risques
+    if current_user.role == 'super_admin':
+        risques_query = Risque.query.filter_by(is_archived=False)
+    else:
+        if hasattr(current_user, 'client_id') and current_user.client_id:
+            risques_query = Risque.query.filter_by(
+                client_id=current_user.client_id,
+                is_archived=False
+            )
+        else:
+            # Fallback : risques créés par l'utilisateur
+            risques_query = Risque.query.filter_by(
+                created_by=current_user.id,
+                is_archived=False
+            )
     
+    risques = risques_query.order_by(Risque.reference).all()
+    print(f"🔍 Risques trouvés: {len(risques)}")
+    
+    # Ajouter les choix au formulaire
+    form.risque_id.choices = [('', 'Sélectionnez un risque...')] + \
+                             [(str(r.id), f"{r.reference} - {r.intitule}") for r in risques]
+    
+    # 2. Utilisateurs responsables
+    if current_user.role == 'super_admin':
+        users = User.query.filter_by(is_active=True).all()
+    else:
+        if hasattr(current_user, 'client_id') and current_user.client_id:
+            users = User.query.filter_by(
+                client_id=current_user.client_id,
+                is_active=True
+            ).all()
+        else:
+            users = User.query.filter_by(is_active=True).all()
+    
+    form.responsable_mesure_id.choices = [('', 'Sélectionnez un responsable...')] + \
+                                         [(str(u.id), f"{u.username} ({u.role})") for u in users]
+    
+    # 3. Catégories
+    form.categorie.choices = [
+        ('', 'Sélectionnez...'),
+        ('operationnel', 'Opérationnel'),
+        ('financier', 'Financier'),
+        ('qualite', 'Qualité'),
+        ('securite', 'Sécurité'),
+        ('conformite', 'Conformité'),
+        ('rh', 'Ressources Humaines'),
+        ('technologique', 'Technologique'),
+        ('autre', 'Autre')
+    ]
+    
+    print(f"🔍 [DEBUG] Fin nouveau_kri_form()")
+    print(f"   Risques dans form.risque_id.choices: {len(form.risque_id.choices) - 1}")
+    
+    # Passer le formulaire au template
     return render_template('kri/form.html',
                          action='creer',
-                         utilisateurs=utilisateurs,
-                         risques_disponibles=risques_disponibles)
+                         form=form,  # <-- IMPORTANT : passer le formulaire
+                         utilisateurs=users,
+                         risques_disponibles=risques)  # <-- Pour le débogage
 
 @app.route('/kri/nouveau/<int:risque_id>', methods=['GET', 'POST'])
 @login_required
 def nouveau_kri(risque_id):
-    """Créer un KRI associé à un risque avec notification et isolation"""
+    """Créer un KRI associé à un risque spécifique avec notification et isolation"""
     
     if request.method == 'GET':
         """Afficher le formulaire pour créer un KRI associé à un risque spécifique"""
-        # CORRECTION : Vérifier l'accès au risque
-        risque = Risque.query.get_or_404(risque_id)
-        
-        if not check_client_access(risque):
-            flash('Accès non autorisé à ce risque', 'error')
-            return redirect(url_for('liste_risques'))
+        # CORRECTION : Utiliser get_client_object_or_404 pour vérifier l'accès
+        risque = get_client_object_or_404(Risque, risque_id)
         
         # Vérifier les permissions
         if not current_user.has_permission('can_manage_kri'):
@@ -23616,8 +23700,8 @@ def nouveau_kri(risque_id):
         # Préparer les données pour le template
         utilisateurs = get_client_filter(User).filter_by(is_active=True).all()
         
-        # CORRECTION : Filtrer les risques du client
-        risques_disponibles = get_client_filter(Risque).filter_by(is_archived=False).all()
+        # CORRECTION : Utiliser la fonction utilitaire
+        risques_disponibles = get_risques_pour_formulaire()
         
         print(f"🔍 DEBUG création KRI pour risque {risque_id}: {len(risques_disponibles)} risques disponibles")
         
@@ -23632,11 +23716,7 @@ def nouveau_kri(risque_id):
         """Traiter la création du KRI"""
         try:
             # CORRECTION : Récupérer le risque avec vérification d'accès
-            risque = Risque.query.get_or_404(risque_id)
-            
-            if not check_client_access(risque):
-                flash('Accès non autorisé à ce risque', 'error')
-                return redirect(url_for('liste_risques'))
+            risque = get_client_object_or_404(Risque, risque_id)
             
             # CORRECTION : Créer le KRI avec client_id automatique
             kri = KRI(
@@ -23646,8 +23726,8 @@ def nouveau_kri(risque_id):
                 description=request.form.get('description'),
                 formule_calcul=request.form.get('formule_calcul'),
                 unite_mesure=request.form.get('unite_mesure'),
-                seuil_alerte=float(request.form.get('seuil_alerte', 0)),
-                seuil_critique=float(request.form.get('seuil_critique', 0)),
+                seuil_alerte=float(request.form.get('seuil_alerte', 0)) if request.form.get('seuil_alerte') else None,
+                seuil_critique=float(request.form.get('seuil_critique', 0)) if request.form.get('seuil_critique') else None,
                 sens_evaluation_seuil=request.form.get('sens_evaluation_seuil', 'superieur'),
                 frequence_mesure=request.form.get('frequence_mesure'),
                 responsable_mesure_id=request.form.get('responsable_mesure_id'),
@@ -23715,12 +23795,62 @@ def nouveau_kri(risque_id):
             flash(f'Erreur lors de la création du KRI: {str(e)}', 'error')
             return redirect(url_for('detail_risque', id=risque_id))
 
+def get_risques_pour_formulaire():
+    """
+    Récupère les risques disponibles pour les formulaires KRI
+    avec une gestion d'erreur robuste
+    """
+    try:
+        # Pour super admin, on peut vouloir voir tous les risques
+        if current_user.role == 'super_admin':
+            # Option 1: Voir tous les risques non archivés
+            risques = Risque.query.filter_by(is_archived=False)\
+                .order_by(Risque.reference)\
+                .all()
+            
+            # Option 2: Filtrer par client si un client spécifique est visualisé
+            viewing_client_id = session.get('viewing_client_id')
+            if viewing_client_id:
+                risques = Risque.query.filter_by(
+                    client_id=viewing_client_id,
+                    is_archived=False
+                ).order_by(Risque.reference).all()
+        else:
+            # Pour les utilisateurs normaux: utiliser get_client_filter
+            risques = get_client_filter(Risque)\
+                .filter_by(is_archived=False)\
+                .order_by(Risque.reference)\
+                .all()
+        
+        # S'assurer que tous les risques ont les attributs nécessaires
+        risques_valides = []
+        for risque in risques:
+            try:
+                # Vérifier que le risque a les attributs de base
+                if hasattr(risque, 'reference') and hasattr(risque, 'intitule'):
+                    # Formatage pour l'affichage
+                    risque._display_text = f"{risque.reference} - {risque.intitule}"
+                    risques_valides.append(risque)
+                else:
+                    print(f"⚠️ Risque {risque.id} manque d'attributs")
+            except Exception as e:
+                print(f"⚠️ Erreur sur risque {risque.id}: {e}")
+                continue
+        
+        print(f"✅ {len(risques_valides)} risques valides pour le formulaire")
+        return risques_valides
+        
+    except Exception as e:
+        print(f"❌ Erreur get_risques_pour_formulaire: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
 @app.route('/kri/<int:kri_id>/modifier', methods=['GET', 'POST'])
 @login_required
 def modifier_kri(kri_id):
     """Modifier un indicateur (KRI ou KPI) existant avec isolation"""
     
-    # CORRECTION : Récupérer avec vérification d'accès
+    # Récupérer avec vérification d'accès
     kri = get_client_filter(KRI).filter_by(id=kri_id).first_or_404()
     
     # Vérifier les permissions
@@ -23730,11 +23860,19 @@ def modifier_kri(kri_id):
         flash('Vous n\'avez pas les permissions pour modifier cet indicateur', 'error')
         return redirect(url_for('liste_kri'))
     
-    # CORRECTION : Préparer les données filtrées par client
+    # Récupérer les risques disponibles
     utilisateurs = get_client_filter(User).filter_by(is_active=True).all()
-    risques_disponibles = get_client_filter(Risque).filter_by(is_archived=False).all()
     
-    print(f"🔍 DEBUG modification KRI {kri_id}: {len(risques_disponibles)} risques disponibles")
+    # Pour les risques, utiliser une méthode qui fonctionne
+    if current_user.role == 'super_admin':
+        risques_disponibles = Risque.query.filter_by(is_archived=False).all()
+    else:
+        risques_disponibles = Risque.query.filter_by(
+            client_id=current_user.client_id,
+            is_archived=False
+        ).all()
+    
+    print(f"🔍 Modifier KRI {kri_id}: {len(risques_disponibles)} risques disponibles")
     
     if request.method == 'POST':
         try:
@@ -23763,35 +23901,6 @@ def modifier_kri(kri_id):
                 flash('La fréquence de mesure est obligatoire', 'error')
                 return redirect(url_for('modifier_kri', kri_id=kri_id))
             
-            # Vérifier si le risque est spécifié
-            if risque_id:
-                risque = get_client_filter(Risque).filter_by(id=int(risque_id)).first()
-                if not risque:
-                    flash('Risque non trouvé ou accès non autorisé', 'error')
-                    return redirect(url_for('modifier_kri', kri_id=kri_id))
-                
-                # Pour les KRI, vérifier s'il y a déjà un autre KRI pour ce risque
-                if type_indicateur == 'kri' and int(risque_id) != kri.risque_id:
-                    kri_existant = get_client_filter(KRI).filter(
-                        KRI.risque_id == int(risque_id),
-                        KRI.type_indicateur == 'kri',
-                        KRI.est_actif == True,
-                        KRI.id != kri_id
-                    ).first()
-                    
-                    if kri_existant:
-                        flash(f'Un KRI existe déjà pour le risque {risque.reference}. Vous pouvez quand même continuer.', 'warning')
-            
-            # Sauvegarder les anciennes valeurs pour l'historique
-            anciennes_valeurs = {
-                'type_indicateur': kri.type_indicateur,
-                'nom': kri.nom,
-                'risque_id': kri.risque_id,
-                'seuil_alerte': kri.seuil_alerte,
-                'seuil_critique': kri.seuil_critique,
-                'sens_evaluation_seuil': kri.sens_evaluation_seuil
-            }
-            
             # Mettre à jour l'indicateur
             kri.type_indicateur = type_indicateur
             kri.risque_id = int(risque_id) if risque_id else None
@@ -23811,18 +23920,8 @@ def modifier_kri(kri_id):
             
             db.session.commit()
             
-            # Journaliser l'action
-            log_activity(current_user.id, 'modification_indicateur',
-                        f"Modification de l'indicateur {kri.nom} ({kri.get_type_display()})",
-                        'kri', kri.id)
-            
-            flash(f'{kri.get_type_display()} modifié avec succès', 'success')
+            flash(f'KRI modifié avec succès', 'success')
             return redirect(url_for('detail_kri', kri_id=kri.id))
-            
-        except ValueError as e:
-            db.session.rollback()
-            flash(f'Erreur de format des données: {str(e)}', 'error')
-            return redirect(url_for('modifier_kri', kri_id=kri_id))
             
         except Exception as e:
             db.session.rollback()
@@ -24731,6 +24830,373 @@ def synchroniser_kri_apres_modification(kri_id, action_type, user_id):
     except Exception as e:
         print(f"❌ Erreur synchronisation KRI {kri_id}: {str(e)}")
         return False
+
+
+# ========================
+# ROUTES IA POUR KRI
+# ========================
+
+@app.route('/api/risque/<int:risque_id>/generer-kris-ia', methods=['GET'])
+@login_required
+@csrf.exempt
+def generer_kris_ia(risque_id):
+    """Générer des suggestions de KRI via IA pour un risque"""
+    try:
+        # Récupérer le risque avec vérification d'accès
+        risque = get_client_object_or_404(Risque, risque_id)
+        
+        # Préparer les données du risque de manière sécurisée
+        risque_data = {
+            'id': risque.id,
+            'reference': risque.reference,
+            'intitule': risque.intitule,
+            'description': risque.description,
+            'categorie': risque.categorie,
+            'probabilite': getattr(risque, 'probabilite', 'Non évaluée'),
+            'impact': getattr(risque, 'impact', 'Non évalué'),
+            'score_risque': getattr(risque, 'score_risque', 'Non calculé'),
+        }
+        
+        # Ajouter les infos de processus si disponible (avec vérification)
+        try:
+            if hasattr(risque, 'processus') and risque.processus:
+                if hasattr(risque.processus, 'nom'):
+                    risque_data['processus'] = {'nom': risque.processus.nom}
+                elif isinstance(risque.processus, dict):
+                    risque_data['processus'] = risque.processus
+                else:
+                    risque_data['processus'] = {'nom': str(risque.processus)}
+            else:
+                risque_data['processus'] = None
+        except Exception as e:
+            print(f"⚠️ Erreur récupération processus: {e}")
+            risque_data['processus'] = None
+        
+        # Ajouter le responsable si disponible (avec vérification)
+        try:
+            if hasattr(risque, 'responsable') and risque.responsable:
+                if hasattr(risque.responsable, 'username'):
+                    risque_data['responsable'] = {'username': risque.responsable.username}
+                elif isinstance(risque.responsable, dict):
+                    risque_data['responsable'] = risque.responsable
+                else:
+                    risque_data['responsable'] = {'username': str(risque.responsable)}
+            else:
+                risque_data['responsable'] = None
+        except Exception as e:
+            print(f"⚠️ Erreur récupération responsable: {e}")
+            risque_data['responsable'] = None
+        
+        # Générer les KRI via IA
+        from services.kri_ia_service import kri_ia_service
+        suggestions = kri_ia_service.generer_kris_pour_risque(risque_data)
+        
+        return jsonify({
+            'success': True,
+            'risque_id': risque_id,
+            'risque_reference': risque.reference,
+            'suggestions': suggestions,
+            'count': len(suggestions),
+            'metadata': {
+                'generated_at': datetime.utcnow().isoformat(),
+                'mode': 'simulation' if kri_ia_service.mode_simulation else 'reel'
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur génération KRI IA: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Erreur lors de la génération des suggestions'
+        }), 500
+
+@app.route('/api/kri/ia/appliquer-suggestion', methods=['POST'])
+@login_required
+@csrf.exempt
+def appliquer_suggestion_kri_ia():
+    """Appliquer une suggestion de KRI IA - VERSION CORRIGÉE"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False, 
+                'error': 'Données manquantes',
+                'code': 'missing_data'
+            }), 400
+        
+        risque_id = data.get('risque_id')
+        suggestion = data.get('suggestion')
+        
+        # DÉBOGAGE
+        print(f"🔍 Application suggestion KRI IA:")
+        print(f"  Risque ID: {risque_id}")
+        print(f"  Suggestion reçue: {suggestion.get('nom', 'Non nommé') if suggestion else 'Aucune'}")
+        
+        if not risque_id:
+            return jsonify({
+                'success': False, 
+                'error': 'ID de risque manquant',
+                'code': 'missing_risque_id'
+            }), 400
+        
+        if not suggestion:
+            return jsonify({
+                'success': False, 
+                'error': 'Suggestion manquante',
+                'code': 'missing_suggestion'
+            }), 400
+        
+        # Vérifier l'accès au risque
+        risque = get_client_object_or_404(Risque, risque_id)
+        
+        print(f"  Risque trouvé: {risque.reference}")
+        
+        # Vérifier s'il y a déjà un KRI pour ce risque
+        kri_existant = get_client_filter(KRI).filter_by(
+            risque_id=risque_id, 
+            type_indicateur='kri',
+            est_actif=True
+        ).first()
+        
+        if kri_existant:
+            print(f"  ⚠️ KRI existant: {kri_existant.id} - {kri_existant.nom}")
+            return jsonify({
+                'success': False,
+                'error': 'Un KRI existe déjà pour ce risque',
+                'existing_kri_id': kri_existant.id,
+                'existing_kri_nom': kri_existant.nom,
+                'redirect_url': url_for('detail_kri', kri_id=kri_existant.id)
+            }), 409  # 409 Conflict
+        
+        # Créer le KRI
+        kri = KRI(
+            type_indicateur='kri',
+            risque_id=risque_id,
+            nom=suggestion.get('nom', f"KRI - {risque.reference}"),
+            description=suggestion.get('description', ''),
+            formule_calcul=suggestion.get('formule_calcul', ''),
+            unite_mesure=suggestion.get('unite_mesure', ''),
+            seuil_alerte=float(suggestion.get('seuil_alerte', 0)) if suggestion.get('seuil_alerte') else None,
+            seuil_critique=float(suggestion.get('seuil_critique', 0)) if suggestion.get('seuil_critique') else None,
+            sens_evaluation_seuil=suggestion.get('sens_evaluation_seuil', 'superieur'),
+            frequence_mesure=suggestion.get('frequence_mesure', 'mensuel'),
+            responsable_mesure_id=current_user.id,  # Par défaut l'utilisateur courant
+            categorie=suggestion.get('categorie', 'operationnel'),
+            source_donnees='Généré par IA',
+            notes_internes=f"Généré par IA le {datetime.utcnow().strftime('%d/%m/%Y %H:%M')}",
+            created_by=current_user.id,
+            est_actif=True
+        )
+        
+        # Ajouter le client_id
+        if current_user.role != 'super_admin' and hasattr(current_user, 'client_id'):
+            kri.client_id = current_user.client_id
+        elif hasattr(risque, 'client_id'):
+            kri.client_id = risque.client_id
+        
+        # Ajouter les métadonnées IA si présentes
+        if '_metadata' in suggestion:
+            if not kri.notes_internes:
+                kri.notes_internes = ''
+            kri.notes_internes += f"\n\nMétadonnées IA: {json.dumps(suggestion['_metadata'], indent=2)}"
+        
+        db.session.add(kri)
+        db.session.commit()
+        
+        print(f"  ✅ KRI créé: {kri.id} - {kri.nom}")
+        
+        # Journaliser l'action
+        log_activity(current_user.id, 'kri_ia_appliquee',
+                    f"KRI IA appliqué: {kri.nom} pour risque {risque.reference}",
+                    'kri', kri.id)
+        
+        # Notification pour l'utilisateur
+        try:
+            notification = Notification(
+                destinataire_id=current_user.id,
+                type_notification=Notification.TYPE_KRI_ALERTE,
+                titre=f"KRI créé via IA: {kri.nom}",
+                message=f"Le KRI '{kri.nom}' a été créé avec succès pour le risque {risque.reference}.",
+                urgence=Notification.URGENCE_NORMAL,
+                entite_type='kri',
+                entite_id=kri.id,
+                donnees_supplementaires={
+                    'risque_reference': risque.reference,
+                    'mode_generation': 'ia'
+                }
+            )
+            db.session.add(notification)
+            db.session.commit()
+            print(f"  📢 Notification créée pour utilisateur {current_user.id}")
+        except Exception as e:
+            print(f"  ⚠️ Erreur création notification: {e}")
+            db.session.rollback()
+        
+        return jsonify({
+            'success': True,
+            'message': 'KRI créé avec succès',
+            'kri_id': kri.id,
+            'kri_nom': kri.nom,
+            'kri_reference': f"KRI-{kri.id:04d}",
+            'redirect_url': url_for('detail_kri', kri_id=kri.id)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Erreur application suggestion KRI IA: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'code': 'server_error'
+        }), 500
+
+@app.route('/api/risque/<int:risque_id>/kris/suggestions', methods=['GET'])
+@login_required
+@csrf.exempt
+def suggestions_kris_fallback(risque_id):
+    """Suggestions de KRI (fallback si IA échoue)"""
+    try:
+        # Récupérer le risque
+        risque = get_client_object_or_404(Risque, risque_id)
+        
+        # Suggestions génériques qui fonctionnent toujours
+        suggestions = [
+            {
+                "nom": f"Taux d'occurrence - {risque.reference}",
+                "description": f"Mesure la fréquence d'apparition du risque : {risque.intitule}",
+                "formule_calcul": "(Nombre d'occurrences / Période) × 100",
+                "unite_mesure": "%",
+                "categorie": "operationnel",
+                "seuil_alerte": 5.0,
+                "seuil_critique": 10.0,
+                "sens_evaluation_seuil": "superieur",
+                "frequence_mesure": "mensuel",
+                "justification": "Indicateur de base pour surveiller la fréquence du risque"
+            },
+            {
+                "nom": f"Impact moyen - {risque.reference}",
+                "description": f"Impact financier moyen du risque {risque.intitule}",
+                "formule_calcul": "Somme des impacts / Nombre d'occurrences",
+                "unite_mesure": "€",
+                "categorie": "financier",
+                "seuil_alerte": 5000.0,
+                "seuil_critique": 10000.0,
+                "sens_evaluation_seuil": "superieur",
+                "frequence_mesure": "trimestriel",
+                "justification": "Mesure l'impact financier du risque"
+            }
+        ]
+        
+        # Ajouter une suggestion basée sur la catégorie
+        categorie = getattr(risque, 'categorie', '').lower()
+        
+        if 'securite' in categorie or 'conformite' in categorie:
+            suggestions.append({
+                "nom": f"Taux de conformité - {risque.reference}",
+                "description": "Pourcentage de conformité aux exigences",
+                "formule_calcul": "(Nombre de contrôles conformes / Total des contrôles) × 100",
+                "unite_mesure": "%",
+                "categorie": "conformite",
+                "seuil_alerte": 90.0,
+                "seuil_critique": 80.0,
+                "sens_evaluation_seuil": "inferieur",
+                "frequence_mesure": "trimestriel",
+                "justification": "Surveille le niveau de conformité"
+            })
+        
+        # Ajouter des métadonnées
+        for suggestion in suggestions:
+            suggestion['_metadata'] = {
+                'generated_at': datetime.utcnow().isoformat(),
+                'mode': 'fallback',
+                'score_confiance': 85.0
+            }
+        
+        return jsonify({
+            'success': True,
+            'risque_id': risque_id,
+            'risque_reference': risque.reference,
+            'suggestions': suggestions,
+            'count': len(suggestions),
+            'metadata': {
+                'generated_at': datetime.utcnow().isoformat(),
+                'mode': 'fallback',
+                'note': 'Suggestions génériques (IA non disponible)'
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur suggestions fallback: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/kri/ia/ajuster-suggestion', methods=['POST'])
+@login_required
+@csrf.exempt
+def ajuster_suggestion_kri_ia():
+    """Ajuster une suggestion de KRI IA avant application"""
+    try:
+        data = request.get_json()
+        
+        suggestion = data.get('suggestion')
+        ajustements = data.get('ajustements', {})
+        
+        if not suggestion:
+            return jsonify({'success': False, 'error': 'Suggestion manquante'}), 400
+        
+        from services.kri_ia_service import kri_ia_service
+        suggestion_ajustee = kri_ia_service.ajuster_kri(suggestion, ajustements)
+        
+        return jsonify({
+            'success': True,
+            'suggestion_ajustee': suggestion_ajustee,
+            'metadata': {
+                'ajusted_at': datetime.utcnow().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur ajustement suggestion: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/risque/<int:id>/kri/ia', methods=['GET'])
+@login_required
+def creer_kri_ia_depuis_risque(id):
+    """Créer un KRI via IA depuis un risque existant"""
+    risque = get_client_object_or_404(Risque, id)
+    
+    # Vérifier les permissions
+    if not current_user.has_permission('can_manage_kri'):
+        flash('Vous n\'avez pas les permissions pour créer un KRI', 'error')
+        return redirect(url_for('detail_risque', id=id))
+    
+    # Vérifier s'il y a déjà un KRI
+    kri_existant = get_client_filter(KRI).filter_by(
+        risque_id=id, 
+        type_indicateur='kri',
+        est_actif=True
+    ).first()
+    
+    if kri_existant:
+        flash(f'Un KRI existe déjà pour ce risque: {kri_existant.nom}', 'warning')
+        return redirect(url_for('detail_risque', id=id))
+    
+    # Rediriger vers le formulaire avec pré-remplissage IA
+    return redirect(url_for('nouveau_kri', risque_id=id))
 
 @app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
 @login_required
