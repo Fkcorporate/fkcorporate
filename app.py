@@ -28006,6 +28006,7 @@ def detail_risque(id):
                          niveau_risque_final=niveau_risque_final)
 
 @app.route('/profil/update', methods=['POST'])
+@csrf.exempt
 @login_required
 def update_profil():
     """Mettre à jour le profil utilisateur"""
