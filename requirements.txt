@@ -85,4 +85,6 @@ Flask-Limiter==3.9.0
 # ============================================================================
 # MONITORING & LOGGING (VERSION CORRECTE)
 # ============================================================================
-# pyformance==0.4  # Version correcte - ou supprimez si non nécessaire
+matplotlib>=3.5.0
+seaborn>=0.11.0
+numpy>=1.21.0
