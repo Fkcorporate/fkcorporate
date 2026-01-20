@@ -1612,6 +1612,11 @@ class Audit(db.Model):
                                     back_populates='audit', 
                                     lazy=True, 
                                     cascade='all, delete-orphan')
+    responsable = db.relationship('User',
+    back_populates='audits_realises',
+    foreign_keys='Audit.responsable_id',
+    overlaps="audits_dont_je_suis_responsable",  # <-- AJOUTER
+    lazy=True)
     
     
     # Méthodes pour gérer l'équipe
@@ -2680,8 +2685,15 @@ class ProcessusActivite(db.Model):
     # Relations
     direction = db.relationship('Direction', backref='processus_activites')
     service = db.relationship('Service', backref='processus_activites')
-    createur = db.relationship('User', backref='processus_activites_crees')
-    elements = db.relationship('ElementLogigramme', backref='processus_parent', lazy=True)
+    createur = db.relationship('User', 
+        back_populates='logigrammes_crees',
+        foreign_keys='ProcessusActivite.created_by',
+        overlaps="processus_activites_crees",  # <-- AJOUTER
+        lazy=True)
+    elements = db.relationship('ElementLogigramme',
+        back_populates='processus_activite',
+        overlaps="processus_parent",  # <-- AJOUTER
+        lazy=True)
     liens = db.relationship('LienLogigramme', back_populates='processus_activite', cascade='all, delete-orphan', lazy=True)
 
     def archiver(self):
