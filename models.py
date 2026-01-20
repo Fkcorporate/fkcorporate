@@ -2743,7 +2743,7 @@ class ElementLogigramme(db.Model):
     __tablename__ = 'element_logigramme'
     id = db.Column(db.Integer, primary_key=True)
     activite_id = db.Column(db.Integer, db.ForeignKey('processus_activite.id'))
-    type_element = db.Column(db.String(50))  # 'debut', 'fin', 'action', 'controle', 'risque', 'organisation'
+    type_element = db.Column(db.String(50))
     libelle = db.Column(db.String(200))
     description = db.Column(db.Text)
     position_x = db.Column(db.Integer)
@@ -2752,12 +2752,11 @@ class ElementLogigramme(db.Model):
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relations
-    processus_activite = db.relationship('ProcessusActivite', back_populates='elements')
-        processus_activite = db.relationship('ProcessusActivite', 
+    # Relations - UNE SEULE DÉCLARATION
+    processus_activite = db.relationship('ProcessusActivite', 
         back_populates='elements',
         foreign_keys='ElementLogigramme.activite_id',
-        overlaps="processus_parent",  # <-- AJOUTER
+        overlaps="processus_parent",  # <-- AJOUTER overlaps
         lazy=True)
 
 class ParametreEvaluation(db.Model):
