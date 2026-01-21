@@ -9616,51 +9616,7 @@ def fix_zone_risque_processus_table():
 with app.app_context():
     fix_zone_risque_processus_table()
 
-def verify_and_fix_database_on_startup():
-    """Vérifie et répare la base de données au démarrage"""
-    with app.app_context():
-        try:
-            print("🔍 Vérification de la base de données PostgreSQL au démarrage...")
-            
-            from sqlalchemy import inspect, text
-            
-            # D'abord, créer toutes les tables si elles n'existent pas
-            db.create_all()
-            print("✅ Tables créées/vérifiées")
-            
-            # Vérifier la table 'direction' spécifiquement
-            inspector = inspect(db.engine)
-            table_names = inspector.get_table_names()
-            
-            if 'direction' in table_names:
-                print("✅ Table 'direction' existe")
-                
-                # Vérifier les colonnes (méthode PostgreSQL)
-                columns = inspector.get_columns('direction')
-                column_names = [col['name'] for col in columns]
-                print(f"📋 Colonnes de 'direction': {column_names}")
-                
-                # Ajouter client_id si manquant (méthode PostgreSQL)
-                if 'client_id' not in column_names:
-                    print("⚠️ Colonne 'client_id' manquante dans 'direction'")
-                    try:
-                        # Pour PostgreSQL
-                        db.session.execute(text('ALTER TABLE direction ADD COLUMN client_id INTEGER'))
-                        db.session.commit()
-                        print("✅ Colonne 'client_id' ajoutée")
-                    except Exception as e:
-                        print(f"⚠️ Impossible d'ajouter client_id: {e}")
-                        db.session.rollback()
-            else:
-                print("❌ Table 'direction' n'existe pas - recréation nécessaire")
-                db.create_all()
-            
-            print("✅ Vérification PostgreSQL terminée")
-            
-        except Exception as e:
-            print(f"❌ Erreur vérification base PostgreSQL: {e}")
-            import traceback
-            traceback.print_exc()
+
 
 def verify_and_fix_postgresql_tables():
     """Vérifie et répare les tables PostgreSQL spécifiquement"""
