@@ -1689,62 +1689,7 @@ def filter_by_client(query, model_class):
 print("✅ Fonctions de vérification d'accès définies")
 
 
-def verify_and_fix_database():
-    """Vérifie et répare la base de données"""
-    with app.app_context():
-        try:
-            print("🔍 Vérification de la base de données...")
-            
-            # Liste des tables critiques
-            critical_tables = [
-                'element_logigramme',
-                'lien_logigramme',
-                'processus_activite'
-            ]
-            
-            for table in critical_tables:
-                try:
-                    # Vérifier si la table existe
-                    result = db.session.execute(
-                        text(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
-                    ).fetchone()
-                    
-                    if not result:
-                        print(f"❌ Table {table} n'existe pas!")
-                        # Créer la table si elle n'existe pas
-                        db.create_all()
-                        print(f"✅ Table {table} créée")
-                    
-                    # ✅ CORRECTION : Ajouter text() ici aussi
-                    # Vérifier si client_id existe
-                    result = db.session.execute(
-                        text(f"PRAGMA table_info({table})")
-                    ).fetchall()
-                    columns = [col[1] for col in result]
-                    
-                    if 'client_id' not in columns:
-                        print(f"⚠️ Colonne client_id manquante dans {table}")
-                        try:
-                            db.session.execute(
-                                text(f"ALTER TABLE {table} ADD COLUMN client_id INTEGER")
-                            )
-                            db.session.commit()
-                            print(f"✅ Colonne client_id ajoutée à {table}")
-                        except Exception as e:
-                            print(f"❌ Impossible d'ajouter client_id à {table}: {e}")
-                            
-                except Exception as e:
-                    print(f"❌ Erreur vérification table {table}: {e}")
-            
-            print("✅ Vérification terminée")
-            
-        except Exception as e:
-            print(f"❌ Erreur vérification base: {e}")
 
-# Appeler cette fonction au démarrage
-with app.app_context():
-    verify_and_fix_database()
-    
 # ========================
 # MIDDLEWARE DE FILTRAGE (doit être après les décorateurs)
 # ========================
@@ -9712,105 +9657,103 @@ def verify_and_fix_database_on_startup():
     """Vérifie et répare la base de données au démarrage"""
     with app.app_context():
         try:
-            print("🔍 Vérification de la base de données au démarrage...")
+            print("🔍 Vérification de la base de données PostgreSQL au démarrage...")
             
             from sqlalchemy import inspect, text
+            
+            # D'abord, créer toutes les tables si elles n'existent pas
+            db.create_all()
+            print("✅ Tables créées/vérifiées")
+            
+            # Vérifier la table 'direction' spécifiquement
             inspector = inspect(db.engine)
+            table_names = inspector.get_table_names()
             
-            # Liste des tables critiques à vérifier
-            critical_tables = [
-                'zone_risque_processus',
-                'alertes',
-                'zone_risque_organigramme',
-                'point_decision',
-                'element_logigramme',
-                'lien_logigramme',
-                'processus_activite',
-                'guide_evaluation'
-            ]
+            if 'direction' in table_names:
+                print("✅ Table 'direction' existe")
+                
+                # Vérifier les colonnes (méthode PostgreSQL)
+                columns = inspector.get_columns('direction')
+                column_names = [col['name'] for col in columns]
+                print(f"📋 Colonnes de 'direction': {column_names}")
+                
+                # Ajouter client_id si manquant (méthode PostgreSQL)
+                if 'client_id' not in column_names:
+                    print("⚠️ Colonne 'client_id' manquante dans 'direction'")
+                    try:
+                        # Pour PostgreSQL
+                        db.session.execute(text('ALTER TABLE direction ADD COLUMN client_id INTEGER'))
+                        db.session.commit()
+                        print("✅ Colonne 'client_id' ajoutée")
+                    except Exception as e:
+                        print(f"⚠️ Impossible d'ajouter client_id: {e}")
+                        db.session.rollback()
+            else:
+                print("❌ Table 'direction' n'existe pas - recréation nécessaire")
+                db.create_all()
             
-            for table_name in critical_tables:
-                if table_name in inspector.get_table_names():
-                    print(f"✅ Table '{table_name}' existe")
-                    
-                    # Vérifier spécifiquement la colonne client_id
-                    columns = [col['name'] for col in inspector.get_columns(table_name)]
-                    
-                    if 'client_id' in columns:
-                        print(f"  ✅ Colonne client_id présente")
-                        
-                        # Vérifier s'il y a des valeurs NULL
-                        null_count = db.session.execute(text(
-                            f"SELECT COUNT(*) FROM {table_name} WHERE client_id IS NULL"
-                        )).scalar()
-                        
-                        if null_count > 0:
-                            print(f"  ⚠️  {null_count} enregistrements sans client_id")
-                            
-                            # Essayer de peupler les client_id manquants
-                            try:
-                                if table_name == 'zone_risque_processus':
-                                    update_sql = f"""
-                                    UPDATE {table_name} 
-                                    SET client_id = (
-                                        SELECT p.client_id 
-                                        FROM processus p 
-                                        WHERE p.id = {table_name}.processus_id
-                                    )
-                                    WHERE client_id IS NULL AND processus_id IS NOT NULL
-                                    """
-                                elif table_name == 'alertes':
-                                    update_sql = f"""
-                                    UPDATE {table_name} 
-                                    SET client_id = (
-                                        SELECT u.client_id 
-                                        FROM user u 
-                                        WHERE u.id = {table_name}.created_by
-                                    )
-                                    WHERE client_id IS NULL AND created_by IS NOT NULL
-                                    """
-                                elif table_name in ['element_logigramme', 'lien_logigramme', 'processus_activite']:
-                                    update_sql = f"""
-                                    UPDATE {table_name} 
-                                    SET client_id = (
-                                        SELECT u.client_id 
-                                        FROM user u 
-                                        WHERE u.id = {table_name}.created_by
-                                    )
-                                    WHERE client_id IS NULL AND created_by IS NOT NULL
-                                    """
-                                else:
-                                    update_sql = f"""
-                                    UPDATE {table_name} 
-                                    SET client_id = {current_user.client_id if hasattr(current_user, 'client_id') else 'NULL'}
-                                    WHERE client_id IS NULL
-                                    """
-                                
-                                db.session.execute(text(update_sql))
-                                db.session.commit()
-                                print(f"  ✅ {null_count} enregistrements mis à jour")
-                                
-                            except Exception as e:
-                                print(f"  ⚠️  Erreur mise à jour: {e}")
-                                db.session.rollback()
-                    else:
-                        print(f"  ❌ Colonne client_id manquante, ajout...")
-                        try:
-                            db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN client_id INTEGER"))
-                            db.session.commit()
-                            print(f"  ✅ Colonne client_id ajoutée")
-                        except Exception as e:
-                            print(f"  ❌ Impossible d'ajouter: {e}")
-                else:
-                    print(f"⚠️ Table '{table_name}' n'existe pas")
-            
-            # Réinitialiser le cache SQLAlchemy
-            refresh_sqlalchemy_cache()
-            
-            print("✅ Vérification terminée")
+            print("✅ Vérification PostgreSQL terminée")
             
         except Exception as e:
-            print(f"⚠️ Erreur vérification base: {e}")
+            print(f"❌ Erreur vérification base PostgreSQL: {e}")
+            import traceback
+            traceback.print_exc()
+
+def verify_and_fix_postgresql_tables():
+    """Vérifie et répare les tables PostgreSQL spécifiquement"""
+    with app.app_context():
+        try:
+            print("🔍 Vérification PostgreSQL des tables critiques...")
+            
+            from sqlalchemy import inspect, text
+            
+            inspector = inspect(db.engine)
+            existing_tables = inspector.get_table_names()
+            
+            # Tables critiques à vérifier
+            critical_tables = [
+                'users', 'direction', 'service', 'risque', 'audit',
+                'constatation', 'recommandation', 'plan_action'
+            ]
+            
+            missing_tables = []
+            for table in critical_tables:
+                if table not in existing_tables:
+                    missing_tables.append(table)
+                    print(f"❌ Table manquante: {table}")
+            
+            if missing_tables:
+                print("⚠️ Tables manquantes, recréation...")
+                db.create_all()
+                print("✅ Toutes les tables recréées")
+            else:
+                print("✅ Toutes les tables critiques existent")
+                
+                # Vérifier client_id sur les tables principales
+                tables_to_check = ['direction', 'service', 'risque', 'audit']
+                for table in tables_to_check:
+                    if table in existing_tables:
+                        columns = inspector.get_columns(table)
+                        column_names = [col['name'] for col in columns]
+                        
+                        if 'client_id' not in column_names:
+                            print(f"⚠️ Ajout client_id à {table}")
+                            try:
+                                db.session.execute(
+                                    text(f'ALTER TABLE {table} ADD COLUMN client_id INTEGER')
+                                )
+                                db.session.commit()
+                                print(f"✅ client_id ajouté à {table}")
+                            except Exception as e:
+                                print(f"❌ Erreur sur {table}: {e}")
+                                db.session.rollback()
+            
+            print("✅ Vérification PostgreSQL complète")
+            
+        except Exception as e:
+            print(f"❌ Erreur vérification PostgreSQL: {e}")
+            import traceback
+            traceback.print_exc()
             
 
 @app.route('/admin/utilisateur/<int:id>/editer', methods=['GET', 'POST'])
