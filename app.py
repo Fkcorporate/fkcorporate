@@ -3214,37 +3214,34 @@ def assign_client_to_super_admin():
         
 
 def apply_client_id_before_insert(mapper, connection, target):
-    """
-    Hook pour ajouter automatiquement client_id aux nouvelles entrées
-    S'applique AVANT chaque insertion
-    """
-    from flask_login import current_user
-    
+    """Applique automatiquement client_id aux nouvelles entités"""
     try:
-        # Vérifier si le modèle a un champ client_id
-        if hasattr(target, 'client_id'):
-            # Si client_id n'est pas déjà défini
-            if target.client_id is None:
-                if current_user.is_authenticated:
-                    # SUPER ADMIN : peut créer sans client_id
-                    if current_user.role == 'super_admin':
-                        # On laisse None ou on prend celui spécifié
-                        pass
-                    else:
-                        # Utilisateurs normaux : ajouter leur client_id
-                        if hasattr(current_user, 'client_id') and current_user.client_id:
-                            target.client_id = current_user.client_id
-                            print(f"✅ Client_id {current_user.client_id} assigné à {type(target).__name__}")
+        # Vérifier si on a un contexte Flask actif
+        from flask import has_request_context, current_user
         
-        # Pour les modèles avec created_by
-        if hasattr(target, 'created_by') and target.created_by is None:
-            if current_user.is_authenticated:
-                target.created_by = current_user.id
-                print(f"✅ Created_by {current_user.id} assigné à {type(target).__name__}")
+        if not has_request_context():
+            print("⚠️ Pas de contexte Flask pour apply_client_id")
+            return
+            
+        if not current_user or not current_user.is_authenticated:
+            # Mode système ou création initiale
+            if hasattr(target, 'client_id'):
+                target.client_id = None  # ou une valeur par défaut
+            return
+            
+        # Appliquer le client_id de l'utilisateur connecté
+        if hasattr(target, 'client_id') and target.client_id is None:
+            if current_user.role == 'super_admin':
+                # Super admin peut choisir un client
+                viewing_client_id = session.get('viewing_client_id')
+                target.client_id = viewing_client_id if viewing_client_id else None
+            else:
+                # Autres utilisateurs : leur client_id
+                target.client_id = current_user.client_id
                 
     except Exception as e:
         print(f"⚠️ Erreur dans apply_client_id_before_insert: {e}")
-        # Ne pas lever l'exception pour éviter de bloquer l'insertion
+        # Ne pas lever l'exception pour ne pas bloquer l'insertion
 
 @app.route('/test-multi-tenant')
 @login_required
