@@ -1571,44 +1571,7 @@ def get_client_filter(model_class, **filters):
     
     return query
 
-def verify_and_fix_database_on_startup():
-    """Vérifie et répare la base de données au démarrage"""
-    with app.app_context():
-        try:
-            print("🔍 Vérification de la base de données au démarrage...")
-            
-            # Vérifier si la table direction existe
-            from sqlalchemy import inspect, text
-            inspector = inspect(db.engine)
-            
-            if 'direction' not in inspector.get_table_names():
-                print("⚠️ Table 'direction' n'existe pas, création...")
-                db.create_all()
-                print("✅ Tables créées")
-            else:
-                print("✅ Table 'direction' existe")
-                
-                # Vérifier les colonnes
-                columns = [col['name'] for col in inspector.get_columns('direction')]
-                print(f"📋 Colonnes de 'direction': {columns}")
-                
-                # Ajouter les colonnes manquantes si nécessaire
-                if 'client_id' not in columns:
-                    print("⚠️ Colonne 'client_id' manquante dans 'direction'")
-                    try:
-                        db.session.execute(text('ALTER TABLE direction ADD COLUMN client_id INTEGER'))
-                        db.session.commit()
-                        print("✅ Colonne 'client_id' ajoutée")
-                    except Exception as e:
-                        print(f"⚠️ Impossible d'ajouter client_id: {e}")
-            
-            print("✅ Vérification terminée")
-            
-        except Exception as e:
-            print(f"⚠️ Erreur vérification base: {e}")
 
-# Appeler au démarrage
-verify_and_fix_database_on_startup()
 
 def get_client_all(model_class, **filters):
     """
