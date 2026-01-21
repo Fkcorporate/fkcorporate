@@ -4219,6 +4219,47 @@ class FormuleAbonnement(db.Model):
             return True
         
         return False
+        
+    def get_permissions_list(self):
+        """
+        Retourne la liste des permissions activées dans le template
+        Format: ['permission1', 'permission2', ...]
+        """
+        if not self.permissions_template:
+            return []
+        
+        # Retourner les clés des permissions qui sont True
+        return [permission for permission, is_active in self.permissions_template.items() if is_active]
+    
+    # Alternative : Méthode qui retourne toutes les permissions avec leur statut
+    def get_permissions_with_status(self):
+        """
+        Retourne toutes les permissions avec leur statut
+        Format: {'permission1': True, 'permission2': False, ...}
+        """
+        return self.permissions_template.copy() if self.permissions_template else {}
+    
+    # Méthode pour vérifier si une permission spécifique est activée
+    def has_permission(self, permission_name):
+        """
+        Vérifie si une permission spécifique est activée dans la formule
+        """
+        if not self.permissions_template:
+            return False
+        
+        return self.permissions_template.get(permission_name, False)
+    
+    # Méthode pour activer/désactiver une permission
+    def set_permission(self, permission_name, is_active):
+        """
+        Active ou désactive une permission spécifique
+        """
+        if not self.permissions_template:
+            self.permissions_template = {}
+        
+        self.permissions_template[permission_name] = is_active
+        self.updated_at = datetime.utcnow()
+        return self
     
     def get_usage_stats(self, client_id=None):
         """Retourne les statistiques d'utilisation"""
