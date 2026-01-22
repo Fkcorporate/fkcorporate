@@ -2550,42 +2550,7 @@ def verifier_echeances_et_alertes():
         except Exception as e:
             print(f"❌ Erreur vérification échéances: {e}")
 
-def demarrer_scheduler():
-    """Démarre le scheduler pour les tâches automatiques"""
-    try:
-        scheduler = BackgroundScheduler()
-        
-        scheduler.add_job(
-            func=automatiser_statuts_audits,
-            trigger="interval",
-            hours=1,
-            id="verif_statuts",
-            name="Vérification automatique des statuts d'audit",
-            replace_existing=True
-        )
-        
-        scheduler.add_job(
-            func=verifier_echeances_et_alertes,
-            trigger="cron",
-            hour=8,
-            minute=0,
-            id="verif_echeances",
-            name="Vérification des échéances et alertes",
-            replace_existing=True
-        )
-        
-        scheduler.start()
-        print("✅ Scheduler démarré avec succès")
-        
-    except Exception as e:
-        print(f"❌ Erreur lors du démarrage du scheduler: {e}")
 
-# Démarrer le scheduler
-with app.app_context():
-    try:
-        demarrer_scheduler()
-    except:
-        print("⚠️ Scheduler non démarré (peut être normal en développement)")
 
 
 @app.route('/logigramme/<int:activite_id>/export-pdf')
