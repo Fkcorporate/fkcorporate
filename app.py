@@ -2802,38 +2802,6 @@ def verifier_echeances_et_alertes():
                 print(f"❌ Erreur sur plan {plan.id}: {e}")
                 db.session.rollback()
 
-def demarrer_scheduler():
-    """Démarre le scheduler pour les tâches automatiques"""
-    try:
-        scheduler = BackgroundScheduler()
-        
-        # Vérifier les statuts toutes les heures
-        scheduler.add_job(
-            func=automatiser_statuts_audits,
-            trigger="interval",
-            hours=1,
-            id="verif_statuts",
-            name="Vérification automatique des statuts d'audit",
-            replace_existing=True
-        )
-        
-        # Vérifier les échéances tous les jours à 8h
-        scheduler.add_job(
-            func=verifier_echeances_et_alertes,
-            trigger="cron",
-            hour=8,
-            minute=0,
-            id="verif_echeances",
-            name="Vérification des échéances et alertes",
-            replace_existing=True
-        )
-        
-        scheduler.start()
-        print("✅ Scheduler démarré avec succès")
-        
-    except Exception as e:
-        print(f"❌ Erreur lors du démarrage du scheduler: {e}")
-
 
 # ========================
 # FONCTIONS DE SYNCHRONISATION
@@ -2870,38 +2838,6 @@ def synchroniser_etape_organigramme(etape_id, action_type, user_id):
         return False
 
 from apscheduler.schedulers.background import BackgroundScheduler
-
-def demarrer_scheduler():
-    """Démarre le scheduler pour les tâches automatiques"""
-    scheduler = BackgroundScheduler()
-    
-    # Vérifier les statuts toutes les heures
-    scheduler.add_job(
-        func=automatiser_statuts_audits,
-        trigger="interval",
-        hours=1,
-        id="verif_statuts",
-        name="Vérification automatique des statuts d'audit",
-        replace_existing=True
-    )
-    
-    # Vérifier les échéances tous les jours à 8h
-    scheduler.add_job(
-        func=verifier_echeances_et_alertes,
-        trigger="cron",
-        hour=8,
-        minute=0,
-        id="verif_echeances",
-        name="Vérification des échéances et alertes",
-        replace_existing=True
-    )
-    
-    scheduler.start()
-    print("✅ Scheduler démarré")
-
-# Appeler dans le contexte de l'application
-with app.app_context():
-    demarrer_scheduler()
 
 # ========================
 # MIDDLEWARE MULTI-TENANT SIMPLE
