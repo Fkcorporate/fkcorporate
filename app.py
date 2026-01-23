@@ -1473,59 +1473,71 @@ print("   - permission_required")
 def check_client_access(entite):
     """Vérifie que l'utilisateur a accès à l'entité (basé sur le client)"""
     
-    # SUPER ADMIN : ACCÈS UNIVERSEL
-    if current_user.role == 'super_admin':
-        return True
-    
-    # Si l'entité n'existe pas
-    if not entite:
-        return False
-    
-    # Vérifier client_id direct
-    if hasattr(entite, 'client_id'):
-        if entite.client_id is None:
-            # Entité sans client_id créée par super admin
-            return True  # Super admin a créé, donc accessible
-        return entite.client_id == current_user.client_id
-    
-    # Vérifier par created_by
-    if hasattr(entite, 'created_by') and entite.created_by:
-        try:
-            createur = User.query.get(entite.created_by)
-            if createur:
-                if createur.role == 'super_admin':
-                    return True  # Créé par super admin, accessible
-                if hasattr(createur, 'client_id'):
-                    return createur.client_id == current_user.client_id
-        except Exception as e:
-            print(f"⚠️ Erreur vérification createur: {e}")
+    # Récupérer l'utilisateur directement depuis la session pour éviter les problèmes de détachement
+    try:
+        if not current_user.is_authenticated:
             return False
-    
-    # Vérifier les relations
-    if hasattr(entite, 'audit_id'):
-        audit = Audit.query.get(entite.audit_id)
-        return check_client_access(audit) if audit else False
-    
-    if hasattr(entite, 'risque_id'):
-        risque = Risque.query.get(entite.risque_id)
-        return check_client_access(risque) if risque else False
-    
-    if hasattr(entite, 'constatation_id'):
-        constatation = Constatation.query.get(entite.constatation_id)
-        return check_client_access(constatation) if constatation else False
-    
-    if hasattr(entite, 'cartographie_id'):
-        cartographie = Cartographie.query.get(entite.cartographie_id)
-        return check_client_access(cartographie) if cartographie else False
-    
-    # Pour les User, vérifier directement
-    if isinstance(entite, User):
-        if entite.role == 'super_admin':
+            
+        # Utiliser les attributs déjà chargés, ne PAS déclencher de nouveaux chargements
+        user_role = current_user.role if hasattr(current_user, 'role') else None
+        user_client_id = current_user.client_id if hasattr(current_user, 'client_id') else None
+        
+        # SUPER ADMIN : ACCÈS UNIVERSEL
+        if user_role == 'super_admin':
             return True
-        return entite.client_id == current_user.client_id
-    
-    # Par défaut, refuser (sécurité par défaut)
-    return False
+        
+        # Si l'entité n'existe pas
+        if not entite:
+            return False
+        
+        # Vérifier client_id direct
+        if hasattr(entite, 'client_id'):
+            if entite.client_id is None:
+                # Entité sans client_id créée par super admin
+                return True
+            return entite.client_id == user_client_id
+        
+        # Vérifier par created_by (avec session explicite)
+        if hasattr(entite, 'created_by') and entite.created_by:
+            try:
+                createur = User.query.get(entite.created_by)
+                if createur:
+                    if createur.role == 'super_admin':
+                        return True
+                    if hasattr(createur, 'client_id'):
+                        return createur.client_id == user_client_id
+            except Exception as e:
+                print(f"⚠️ Erreur vérification createur: {e}")
+                return False
+        
+        # Vérifier les relations avec session explicite
+        if hasattr(entite, 'audit_id'):
+            audit = Audit.query.get(entite.audit_id)
+            return check_client_access(audit) if audit else False
+        
+        if hasattr(entite, 'risque_id'):
+            risque = Risque.query.get(entite.risque_id)
+            return check_client_access(risque) if risque else False
+        
+        if hasattr(entite, 'constatation_id'):
+            constatation = Constatation.query.get(entite.constatation_id)
+            return check_client_access(constatation) if constatation else False
+        
+        if hasattr(entite, 'cartographie_id'):
+            cartographie = Cartographie.query.get(entite.cartographie_id)
+            return check_client_access(cartographie) if cartographie else False
+        
+        # Pour les User
+        if isinstance(entite, User):
+            if entite.role == 'super_admin':
+                return True
+            return entite.client_id == user_client_id
+        
+        return False
+        
+    except Exception as e:
+        print(f"⚠️ Erreur dans check_client_access: {e}")
+        return False  # Refuser par sécurité
 
 
 # ========================
@@ -1536,34 +1548,46 @@ def get_client_filter(model_class, **filters):
     """
     Retourne une requête filtrée par client
     """
+    from flask_login import current_user
+    
+    # Si l'utilisateur n'est pas authentifié
+    if not current_user.is_authenticated:
+        return model_class.query.filter_by(id=-1)  # Retourne une requête vide
+    
+    # Récupérer les attributs de l'utilisateur une seule fois
+    user_role = getattr(current_user, 'role', None)
+    user_client_id = getattr(current_user, 'client_id', None)
+    user_id = getattr(current_user, 'id', None)
+    
     query = model_class.query
     
-    # SUPER ADMIN : PAS DE FILTRE (sauf s'il visualise un client spécifique)
-    if current_user.is_authenticated and current_user.role == 'super_admin':
+    # SUPER ADMIN
+    if user_role == 'super_admin':
         viewing_client_id = session.get('viewing_client_id')
         
-        # Si le super admin a choisi un client spécifique
         if viewing_client_id is not None:
             if hasattr(model_class, 'client_id'):
                 query = query.filter(model_class.client_id == viewing_client_id)
             elif hasattr(model_class, 'created_by'):
-                # Pour les tables sans client_id : filtrer par les utilisateurs du client
                 user_ids = User.query.filter_by(client_id=viewing_client_id).with_entities(User.id).all()
                 user_ids = [uid[0] for uid in user_ids] if user_ids else [-1]
                 query = query.filter(model_class.created_by.in_(user_ids))
-        # Sinon, super admin voit tout (pas de filtre client)
+        # Sinon, pas de filtre
     
-    # UTILISATEURS NORMAUX : filtrer par leur client
-    elif current_user.is_authenticated:
-        client_id = current_user.client_id
-        
-        if hasattr(model_class, 'client_id'):
-            query = query.filter(model_class.client_id == client_id)
-        elif hasattr(model_class, 'created_by'):
-            # Récupérer tous les utilisateurs du même client
-            user_ids = db.session.query(User.id).filter_by(client_id=client_id).all()
-            user_ids = [uid[0] for uid in user_ids] if user_ids else [-1]
-            query = query.filter(model_class.created_by.in_(user_ids))
+    # UTILISATEURS NORMAUX
+    else:
+        if user_client_id:
+            if hasattr(model_class, 'client_id'):
+                query = query.filter(model_class.client_id == user_client_id)
+            elif hasattr(model_class, 'created_by'):
+                # Récupérer les utilisateurs du client
+                try:
+                    user_ids = db.session.query(User.id).filter_by(client_id=user_client_id).all()
+                    user_ids = [uid[0] for uid in user_ids] if user_ids else [-1]
+                    query = query.filter(model_class.created_by.in_(user_ids))
+                except:
+                    # Fallback : filtrer par l'utilisateur courant
+                    query = query.filter(model_class.created_by == user_id)
     
     # Ajouter les filtres supplémentaires
     for key, value in filters.items():
@@ -1571,7 +1595,6 @@ def get_client_filter(model_class, **filters):
             query = query.filter(getattr(model_class, key) == value)
     
     return query
-
 
 
 def get_client_all(model_class, **filters):
