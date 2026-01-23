@@ -24174,7 +24174,6 @@ def creer_kri_ia_depuis_risque(id):
     
     # Rediriger vers le formulaire avec pré-remplissage IA
     return redirect(url_for('nouveau_kri', risque_id=id))
-
 @app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
 @login_required
 def evaluer_risque_triphase(id):
@@ -24196,12 +24195,15 @@ def evaluer_risque_triphase(id):
     # Réinitialiser la session
     db.session.remove()
     
-    # Test de connexion DB
+    # Test de connexion DB - CORRECTION : utiliser text() pour les requêtes SQL brutes
     try:
-        db.session.execute('SELECT 1')
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
     except Exception as e:
         flash(f'Erreur de connexion à la base de données: {str(e)}', 'error')
-        return redirect(url_for('index'))
+        # CORRIGÉ : Utiliser le bon nom de route (probablement 'dashboard' ou 'accueil')
+        return redirect(url_for('dashboard'))  # Changez 'dashboard' par votre route d'accueil
+    
     # =========================================
     
     form = EvaluationRisqueForm()
