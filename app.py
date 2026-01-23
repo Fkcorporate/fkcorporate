@@ -14856,89 +14856,7 @@ def shutdown_session(exception=None):
     # Appeler remove() seulement ici, pas dans after_request
     db.session.remove()
     
-def check_client_access(entite):
-    """Vérifie que l'utilisateur a accès à l'entité"""
-    
-    try:
-        # Vérifier si current_user existe et est authentifié
-        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
-            return False
-        
-        # Utiliser getattr() pour éviter les chargements lazy
-        user_id = getattr(current_user, 'id', None)
-        user_role = getattr(current_user, 'role', None)
-        user_client_id = getattr(current_user, 'client_id', None)
-        
-        # SUPER ADMIN : ACCÈS UNIVERSEL (sauf aux autres super admin)
-        if user_role == 'super_admin':
-            # Un super admin ne peut pas accéder à un autre super admin
-            if isinstance(entite, User) and getattr(entite, 'role', None) == 'super_admin':
-                return getattr(entite, 'id', None) == user_id  # Seulement son propre compte
-            return True
-        
-        # Si l'entité n'existe pas
-        if not entite:
-            return False
-        
-        # Vérifier client_id direct
-        entite_client_id = getattr(entite, 'client_id', None)
-        if entite_client_id:
-            return entite_client_id == user_client_id
-        
-        # Vérifier par created_by
-        entite_created_by = getattr(entite, 'created_by', None)
-        if entite_created_by:
-            try:
-                createur = User.query.get(entite_created_by)
-                if createur:
-                    createur_role = getattr(createur, 'role', None)
-                    # Un utilisateur normal ne peut pas accéder aux données créées par un super admin
-                    if createur_role == 'super_admin':
-                        return False
-                    createur_client_id = getattr(createur, 'client_id', None)
-                    return createur_client_id == user_client_id
-            except Exception as e:
-                print(f"⚠️ Erreur vérification createur: {e}")
-                return False
-        
-        # Vérifier les relations
-        audit_id = getattr(entite, 'audit_id', None)
-        if audit_id:
-            audit = Audit.query.get(audit_id)
-            return check_client_access(audit) if audit else False
-        
-        risque_id = getattr(entite, 'risque_id', None)
-        if risque_id:
-            risque = Risque.query.get(risque_id)
-            return check_client_access(risque) if risque else False
-        
-        constatation_id = getattr(entite, 'constatation_id', None)
-        if constatation_id:
-            constatation = Constatation.query.get(constatation_id)
-            return check_client_access(constatation) if constatation else False
-        
-        cartographie_id = getattr(entite, 'cartographie_id', None)
-        if cartographie_id:
-            cartographie = Cartographie.query.get(cartographie_id)
-            return check_client_access(cartographie) if cartographie else False
-        
-        # Pour les User, vérifier directement
-        if isinstance(entite, User):
-            entite_role = getattr(entite, 'role', None)
-            # Ne pas permettre l'accès aux super admin
-            if entite_role == 'super_admin':
-                return False
-            entite_client_id = getattr(entite, 'client_id', None)
-            return entite_client_id == user_client_id
-        
-        # Par défaut, refuser
-        return False
-        
-    except Exception as e:
-        print(f"⚠️ Erreur dans check_client_access: {e}")
-        import traceback
-        traceback.print_exc()
-        return False  # Sécurité par défaut
+
 
 # ========================
 # ROUTES PRINCIPALES
@@ -24192,19 +24110,16 @@ def check_client_access(entite):
     
     try:
         # Vérifier si current_user existe et est authentifié
-        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
+        if not current_user or not current_user.is_authenticated:
             return False
         
-        # Utiliser getattr() pour éviter les chargements lazy
+        # Utiliser getattr() pour éviter les chargements lazy - IMPORTANT !
         user_id = getattr(current_user, 'id', None)
         user_role = getattr(current_user, 'role', None)
         user_client_id = getattr(current_user, 'client_id', None)
         
-        # SUPER ADMIN : ACCÈS UNIVERSEL (sauf aux autres super admin)
+        # SUPER ADMIN : ACCÈS UNIVERSEL
         if user_role == 'super_admin':
-            # Un super admin ne peut pas accéder à un autre super admin
-            if isinstance(entite, User) and getattr(entite, 'role', None) == 'super_admin':
-                return getattr(entite, 'id', None) == user_id  # Seulement son propre compte
             return True
         
         # Si l'entité n'existe pas
@@ -24212,53 +24127,33 @@ def check_client_access(entite):
             return False
         
         # Vérifier client_id direct
-        entite_client_id = getattr(entite, 'client_id', None)
-        if entite_client_id:
+        if hasattr(entite, 'client_id'):
+            entite_client_id = getattr(entite, 'client_id', None)
+            if entite_client_id is None:
+                return True  # Entité sans client créée par super admin
             return entite_client_id == user_client_id
         
         # Vérifier par created_by
-        entite_created_by = getattr(entite, 'created_by', None)
-        if entite_created_by:
-            try:
-                createur = User.query.get(entite_created_by)
-                if createur:
-                    createur_role = getattr(createur, 'role', None)
-                    # Un utilisateur normal ne peut pas accéder aux données créées par un super admin
-                    if createur_role == 'super_admin':
-                        return False
-                    createur_client_id = getattr(createur, 'client_id', None)
-                    return createur_client_id == user_client_id
-            except Exception as e:
-                print(f"⚠️ Erreur vérification createur: {e}")
-                return False
+        if hasattr(entite, 'created_by'):
+            entite_created_by = getattr(entite, 'created_by', None)
+            if entite_created_by:
+                try:
+                    createur = User.query.get(entite_created_by)
+                    if createur:
+                        createur_role = getattr(createur, 'role', None)
+                        if createur_role == 'super_admin':
+                            return True  # Créé par super admin
+                        createur_client_id = getattr(createur, 'client_id', None)
+                        return createur_client_id == user_client_id
+                except Exception as e:
+                    print(f"⚠️ Erreur vérification createur: {e}")
+                    return False
         
-        # Vérifier les relations
-        audit_id = getattr(entite, 'audit_id', None)
-        if audit_id:
-            audit = Audit.query.get(audit_id)
-            return check_client_access(audit) if audit else False
-        
-        risque_id = getattr(entite, 'risque_id', None)
-        if risque_id:
-            risque = Risque.query.get(risque_id)
-            return check_client_access(risque) if risque else False
-        
-        constatation_id = getattr(entite, 'constatation_id', None)
-        if constatation_id:
-            constatation = Constatation.query.get(constatation_id)
-            return check_client_access(constatation) if constatation else False
-        
-        cartographie_id = getattr(entite, 'cartographie_id', None)
-        if cartographie_id:
-            cartographie = Cartographie.query.get(cartographie_id)
-            return check_client_access(cartographie) if cartographie else False
-        
-        # Pour les User, vérifier directement
+        # Pour les User
         if isinstance(entite, User):
             entite_role = getattr(entite, 'role', None)
-            # Ne pas permettre l'accès aux super admin
             if entite_role == 'super_admin':
-                return False
+                return False  # Les utilisateurs normaux ne peuvent pas accéder aux super admin
             entite_client_id = getattr(entite, 'client_id', None)
             return entite_client_id == user_client_id
         
