@@ -29200,7 +29200,13 @@ def api_statistiques_audit_globales():
     
     return jsonify(stats)
 
-
+@app.teardown_request
+def teardown_request(exception=None):
+    """Nettoyer la session après chaque requête"""
+    if exception:
+        db.session.rollback()
+    db.session.remove()
+    
 # Dans votre app.py, modifiez la route nouvelle_constatation :
 
 @app.route('/audit/<int:audit_id>/constatation/nouvelle', methods=['POST'])
