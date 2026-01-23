@@ -24174,7 +24174,8 @@ def creer_kri_ia_depuis_risque(id):
     
     # Rediriger vers le formulaire avec pré-remplissage IA
     return redirect(url_for('nouveau_kri', risque_id=id))
-    @app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
+    
+@app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
 @login_required
 def evaluer_risque_triphase(id):
     # CORRECTION : Récupérer avec vérification d'accès
