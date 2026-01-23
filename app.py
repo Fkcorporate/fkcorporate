@@ -14816,7 +14816,46 @@ def filter_client_data():
 
 # Dans chaque route qui manipule des données, ajoutez ce filtre :
 
+# ========================
+# MIDDLEWARES POUR GESTION DES SESSIONS
+# ========================
 
+@app.before_request
+def ensure_db_session():
+    """S'assure qu'une session DB est active pour la requête"""
+    # Démarrer une nouvelle session si nécessaire
+    if not db.session.is_active:
+        db.session.begin()
+    else:
+        try:
+            # Tester si la session fonctionne
+            db.session.execute(text('SELECT 1'))
+        except:
+            db.session.rollback()
+            db.session.close()
+            db.session.begin()
+
+@app.after_request
+def close_db_session(response):
+    """Ferme proprement la session après la requête"""
+    try:
+        if db.session.is_active:
+            db.session.commit()
+    except:
+        db.session.rollback()
+    finally:
+        # NE PAS appeler db.session.remove() - cela cause les problèmes
+        pass
+    return response
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    """Ferme la session à la fin du contexte de l'application"""
+    if exception:
+        db.session.rollback()
+    # Appeler remove() seulement ici, pas dans after_request
+    db.session.remove()
+    
 def check_client_access(entite):
     """Vérifie que l'utilisateur a accès à l'entité"""
     
@@ -24104,32 +24143,305 @@ def creer_kri_ia_depuis_risque(id):
     # Rediriger vers le formulaire avec pré-remplissage IA
     return redirect(url_for('nouveau_kri', risque_id=id))
     
+# ========================
+# MIDDLEWARES POUR GESTION DES SESSIONS
+# ========================
+
+@app.before_request
+def ensure_db_session():
+    """S'assure qu'une session DB est active pour la requête"""
+    # Démarrer une nouvelle session si nécessaire
+    if not db.session.is_active:
+        db.session.begin()
+    else:
+        try:
+            # Tester si la session fonctionne
+            db.session.execute(text('SELECT 1'))
+        except:
+            db.session.rollback()
+            db.session.close()
+            db.session.begin()
+
+@app.after_request
+def close_db_session(response):
+    """Ferme proprement la session après la requête"""
+    try:
+        if db.session.is_active:
+            db.session.commit()
+    except:
+        db.session.rollback()
+    finally:
+        # NE PAS appeler db.session.remove() - cela cause les problèmes
+        pass
+    return response
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    """Ferme la session à la fin du contexte de l'application"""
+    if exception:
+        db.session.rollback()
+    # Appeler remove() seulement ici, pas dans after_request
+    db.session.remove()
+
+# ========================
+# FONCTION DE VÉRIFICATION D'ACCÈS (VERSION UNIQUE CORRIGÉE)
+# ========================
+
+def check_client_access(entite):
+    """Vérifie que l'utilisateur a accès à l'entité"""
+    
+    try:
+        # Vérifier si current_user existe et est authentifié
+        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
+            return False
+        
+        # Utiliser getattr() pour éviter les chargements lazy
+        user_id = getattr(current_user, 'id', None)
+        user_role = getattr(current_user, 'role', None)
+        user_client_id = getattr(current_user, 'client_id', None)
+        
+        # SUPER ADMIN : ACCÈS UNIVERSEL (sauf aux autres super admin)
+        if user_role == 'super_admin':
+            # Un super admin ne peut pas accéder à un autre super admin
+            if isinstance(entite, User) and getattr(entite, 'role', None) == 'super_admin':
+                return getattr(entite, 'id', None) == user_id  # Seulement son propre compte
+            return True
+        
+        # Si l'entité n'existe pas
+        if not entite:
+            return False
+        
+        # Vérifier client_id direct
+        entite_client_id = getattr(entite, 'client_id', None)
+        if entite_client_id:
+            return entite_client_id == user_client_id
+        
+        # Vérifier par created_by
+        entite_created_by = getattr(entite, 'created_by', None)
+        if entite_created_by:
+            try:
+                createur = User.query.get(entite_created_by)
+                if createur:
+                    createur_role = getattr(createur, 'role', None)
+                    # Un utilisateur normal ne peut pas accéder aux données créées par un super admin
+                    if createur_role == 'super_admin':
+                        return False
+                    createur_client_id = getattr(createur, 'client_id', None)
+                    return createur_client_id == user_client_id
+            except Exception as e:
+                print(f"⚠️ Erreur vérification createur: {e}")
+                return False
+        
+        # Vérifier les relations
+        audit_id = getattr(entite, 'audit_id', None)
+        if audit_id:
+            audit = Audit.query.get(audit_id)
+            return check_client_access(audit) if audit else False
+        
+        risque_id = getattr(entite, 'risque_id', None)
+        if risque_id:
+            risque = Risque.query.get(risque_id)
+            return check_client_access(risque) if risque else False
+        
+        constatation_id = getattr(entite, 'constatation_id', None)
+        if constatation_id:
+            constatation = Constatation.query.get(constatation_id)
+            return check_client_access(constatation) if constatation else False
+        
+        cartographie_id = getattr(entite, 'cartographie_id', None)
+        if cartographie_id:
+            cartographie = Cartographie.query.get(cartographie_id)
+            return check_client_access(cartographie) if cartographie else False
+        
+        # Pour les User, vérifier directement
+        if isinstance(entite, User):
+            entite_role = getattr(entite, 'role', None)
+            # Ne pas permettre l'accès aux super admin
+            if entite_role == 'super_admin':
+                return False
+            entite_client_id = getattr(entite, 'client_id', None)
+            return entite_client_id == user_client_id
+        
+        # Par défaut, refuser
+        return False
+        
+    except Exception as e:
+        print(f"⚠️ Erreur dans check_client_access: {e}")
+        import traceback
+        traceback.print_exc()
+        return False  # Sécurité par défaut
+
+# ========================
+# FONCTIONS DE FILTRAGE CLIENT (CORRIGÉES)
+# ========================
+
+def get_client_filter(model_class, **filters):
+    """
+    Retourne une requête filtrée par client
+    """
+    # Si l'utilisateur n'est pas authentifié
+    if not current_user or not current_user.is_authenticated:
+        return model_class.query.filter_by(id=-1)  # Retourne une requête vide
+    
+    # Récupérer les attributs de l'utilisateur une seule fois
+    user_role = getattr(current_user, 'role', None)
+    user_client_id = getattr(current_user, 'client_id', None)
+    user_id = getattr(current_user, 'id', None)
+    
+    query = model_class.query
+    
+    # SUPER ADMIN
+    if user_role == 'super_admin':
+        viewing_client_id = session.get('viewing_client_id')
+        
+        if viewing_client_id is not None:
+            if hasattr(model_class, 'client_id'):
+                query = query.filter(model_class.client_id == viewing_client_id)
+            elif hasattr(model_class, 'created_by'):
+                user_ids = User.query.filter_by(client_id=viewing_client_id).with_entities(User.id).all()
+                user_ids = [uid[0] for uid in user_ids] if user_ids else [-1]
+                query = query.filter(model_class.created_by.in_(user_ids))
+        # Sinon, pas de filtre
+    
+    # UTILISATEURS NORMAUX
+    else:
+        if user_client_id:
+            if hasattr(model_class, 'client_id'):
+                query = query.filter(model_class.client_id == user_client_id)
+            elif hasattr(model_class, 'created_by'):
+                # Récupérer les utilisateurs du client
+                try:
+                    user_ids = db.session.query(User.id).filter_by(client_id=user_client_id).all()
+                    user_ids = [uid[0] for uid in user_ids] if user_ids else [-1]
+                    query = query.filter(model_class.created_by.in_(user_ids))
+                except:
+                    # Fallback : filtrer par l'utilisateur courant
+                    query = query.filter(model_class.created_by == user_id)
+    
+    # Ajouter les filtres supplémentaires
+    for key, value in filters.items():
+        if hasattr(model_class, key):
+            query = query.filter(getattr(model_class, key) == value)
+    
+    return query
+
+def get_client_all(model_class, **filters):
+    """
+    Récupère tous les objets d'un modèle avec filtrage client
+    """
+    query = get_client_filter(model_class)
+    
+    # Ajouter les filtres supplémentaires
+    for key, value in filters.items():
+        if hasattr(model_class, key):
+            query = query.filter(getattr(model_class, key) == value)
+    
+    return query.all()
+
+def get_client_count(model_class, **filters):
+    """
+    Compte les objets d'un modèle avec filtrage client
+    """
+    query = get_client_filter(model_class)
+    
+    # Ajouter les filtres supplémentaires
+    for key, value in filters.items():
+        if hasattr(model_class, key):
+            query = query.filter(getattr(model_class, key) == value)
+    
+    return query.count()
+
+def get_client_object_or_404(model_class, object_id, **filters):
+    """
+    Récupère un objet par ID avec filtrage client ou retourne 404
+    """
+    # Construire le filtre complet
+    complete_filters = {'id': object_id, **filters}
+    
+    # Utiliser get_client_filter
+    query = get_client_filter(model_class)
+    
+    # Ajouter le filtre ID
+    query = query.filter(model_class.id == object_id)
+    
+    # Ajouter les filtres supplémentaires
+    for key, value in filters.items():
+        if hasattr(model_class, key):
+            query = query.filter(getattr(model_class, key) == value)
+    
+    # Récupérer l'objet
+    obj = query.first()
+    
+    if obj is None:
+        abort(404)
+    
+    return obj
+
+def filter_by_client(query, model_class):
+    """Ajoute un filtre client_id à une requête (sauf pour super admin)"""
+    if not current_user or not current_user.is_authenticated:
+        return query.filter_by(id=-1)
+    
+    user_role = getattr(current_user, 'role', None)
+    user_client_id = getattr(current_user, 'client_id', None)
+    
+    if user_role == 'super_admin':
+        return query  # Super admin voit TOUT
+    
+    # Pour les admin clients et utilisateurs normaux
+    if hasattr(model_class, 'client_id'):
+        return query.filter(model_class.client_id == user_client_id)
+    elif hasattr(model_class, 'created_by'):
+        # Récupérer tous les utilisateurs du même client
+        try:
+            utilisateurs_client = User.query.filter_by(
+                client_id=user_client_id
+            ).with_entities(User.id).all()
+            user_ids = [u.id for u in utilisateurs_client]
+            if user_ids:
+                return query.filter(model_class.created_by.in_(user_ids))
+            else:
+                return query.filter(model_class.created_by == -1)  # Aucun résultat
+        except:
+            return query.filter(model_class.created_by == getattr(current_user, 'id', -1))
+    else:
+        return query
+
+print("✅ Fonctions de vérification d'accès définies")
+
+# ========================
+# FONCTION ÉVALUATION TRIPHASE (CORRIGÉE)
+# ========================
+
 @app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
 @login_required
 def evaluer_risque_triphase(id):
     try:
-        # RÉINITIALISER LA SESSION SI NÉCESSAIRE
-        try:
-            db.session.execute('SELECT 1')
-        except SQLAlchemyError:
-            db.session.rollback()
-            db.session.close()
+        # S'assurer que la session est active
+        ensure_db_session()
         
-        # CORRECTION : Récupérer avec vérification d'accès
+        # Récupérer le risque
         risque = Risque.query.get_or_404(id)
         
-        # Vérifier l'accès
+        # Vérifier l'accès avec la nouvelle fonction
         if not check_client_access(risque):
             flash('Accès non autorisé à ce risque', 'error')
             return redirect(url_for('liste_cartographies'))
         
         form = EvaluationTriPhaseForm()
         
-        # CORRECTION : Récupérer uniquement les utilisateurs du même client
-        if current_user.role == 'super_admin':
+        # Utiliser getattr pour current_user
+        user_role = getattr(current_user, 'role', None)
+        user_client_id = getattr(current_user, 'client_id', None)
+        
+        # CORRECTION : Récupérer les utilisateurs du même client
+        if user_role == 'super_admin':
             users = User.query.filter(User.is_active == True).all()
         else:
-            users = get_client_filter(User).filter(User.is_active == True).all()
+            users = User.query.filter(
+                User.is_active == True,
+                User.client_id == user_client_id
+            ).all()
         
         form.referent_pre_evaluation_id.choices = [(0, 'Sélectionnez un référent...')] + [(u.id, f"{u.username} - {u.role}") for u in users]
         
@@ -24141,7 +24453,9 @@ def evaluer_risque_triphase(id):
         
         # ========== GESTION DE LA CAMPAGNE - AVEC PRÉCHARGEMENT ==========
         # Précharger la cartographie pour éviter les requêtes lazy
-        risque.cartographie
+        if risque.cartographie:
+            # Force le chargement de la cartographie
+            cartographie = risque.cartographie
         
         # CORRECTION : Utiliser get_client_filter pour les campagnes
         campagne_active = get_client_filter(CampagneEvaluation)\
@@ -24152,22 +24466,22 @@ def evaluer_risque_triphase(id):
         
         if not campagne_active:
             # Créer une campagne par défaut avec le bon client_id
-            annee_courante = datetime.now().year
+            annee_courante = datetime.now(timezone.utc).year  # CORRIGÉ : timezone-aware
             campagne_active = CampagneEvaluation(
                 cartographie_id=risque.cartographie_id,
                 nom=f"Campagne {annee_courante}",
                 description=f"Évaluation annuelle {annee_courante}",
-                date_debut=datetime.now().date(),
+                date_debut=datetime.now(timezone.utc).date(),  # CORRIGÉ : timezone-aware
                 statut='en_cours',
-                created_by=current_user.id
+                created_by=getattr(current_user, 'id', None)
             )
             
             # CORRECTION CRITIQUE : Ajouter le client_id selon l'utilisateur
-            if current_user.role != 'super_admin' and hasattr(current_user, 'client_id'):
-                campagne_active.client_id = current_user.client_id
-            elif current_user.role == 'super_admin':
+            if user_role != 'super_admin' and user_client_id:
+                campagne_active.client_id = user_client_id
+            elif user_role == 'super_admin':
                 # Super admin peut ne pas avoir de client_id ou utiliser celui du risque
-                campagne_active.client_id = risque.client_id
+                campagne_active.client_id = getattr(risque, 'client_id', None)
             
             db.session.add(campagne_active)
             db.session.commit()
@@ -24182,7 +24496,7 @@ def evaluer_risque_triphase(id):
         
         # Gestion de la soumission du formulaire
         if request.method == 'POST':
-            print(f"📨 Formulaire soumis par {current_user.username} (client_id: {current_user.client_id})")
+            print(f"📨 Formulaire soumis par {getattr(current_user, 'username', 'N/A')} (client_id: {user_client_id})")
             print(f"🎯 Campagne active: {campagne_active.nom} (client_id: {campagne_active.client_id})")
             
             try:
@@ -24235,7 +24549,7 @@ def evaluer_risque_triphase(id):
                     if evaluation_en_cours:
                         # Mise à jour
                         evaluation_en_cours.referent_pre_evaluation_id = int(referent_id) if referent_id and referent_id != '0' else None
-                        evaluation_en_cours.date_pre_evaluation = datetime.utcnow()
+                        evaluation_en_cours.date_pre_evaluation = datetime.now(timezone.utc)  # CORRIGÉ
                         evaluation_en_cours.impact_pre = impact_pre
                         evaluation_en_cours.probabilite_pre = probabilite_pre
                         evaluation_en_cours.niveau_maitrise_pre = niveau_maitrise_pre
@@ -24243,14 +24557,14 @@ def evaluer_risque_triphase(id):
                         evaluation_en_cours.score_risque = score_risque
                         evaluation_en_cours.niveau_risque = niveau_risque
                         evaluation_en_cours.statut_validation = 'en_attente'
-                        evaluation_en_cours.updated_at = datetime.utcnow()
+                        evaluation_en_cours.updated_at = datetime.now(timezone.utc)  # CORRIGÉ
                     else:
                         # Création NOUVELLE - CORRECTION CRITIQUE : Ajouter client_id
                         evaluation = EvaluationRisque(
                             risque_id=id,
                             campagne_id=campagne_active.id,
                             referent_pre_evaluation_id=int(referent_id) if referent_id and referent_id != '0' else None,
-                            date_pre_evaluation=datetime.utcnow(),
+                            date_pre_evaluation=datetime.now(timezone.utc),  # CORRIGÉ
                             impact_pre=impact_pre,
                             probabilite_pre=probabilite_pre,
                             niveau_maitrise_pre=niveau_maitrise_pre,
@@ -24258,15 +24572,15 @@ def evaluer_risque_triphase(id):
                             score_risque=score_risque,
                             niveau_risque=niveau_risque,
                             statut_validation='en_attente',
-                            created_by=current_user.id
+                            created_by=getattr(current_user, 'id', None)
                         )
                         
                         # CORRECTION CRITIQUE : Synchroniser le client_id
-                        if current_user.role != 'super_admin' and hasattr(current_user, 'client_id'):
-                            evaluation.client_id = current_user.client_id
-                        elif risque.client_id:
+                        if user_role != 'super_admin' and user_client_id:
+                            evaluation.client_id = user_client_id
+                        elif getattr(risque, 'client_id', None):
                             evaluation.client_id = risque.client_id
-                        elif campagne_active.client_id:
+                        elif getattr(campagne_active, 'client_id', None):
                             evaluation.client_id = campagne_active.client_id
                         
                         db.session.add(evaluation)
@@ -24310,8 +24624,8 @@ def evaluer_risque_triphase(id):
                     print(f"🎯 Phase 2 - Impact: {impact_final}, Probabilité: {probabilite_final}, Score: {score_risque}")
                     
                     # Mise à jour
-                    evaluation_en_cours.validateur_id = current_user.id
-                    evaluation_en_cours.date_validation = datetime.utcnow()
+                    evaluation_en_cours.validateur_id = getattr(current_user, 'id', None)
+                    evaluation_en_cours.date_validation = datetime.now(timezone.utc)  # CORRIGÉ
                     evaluation_en_cours.impact_val = impact_val if impact_val > 0 else None
                     evaluation_en_cours.probabilite_val = probabilite_val if probabilite_val > 0 else None
                     evaluation_en_cours.niveau_maitrise_val = niveau_maitrise_val if niveau_maitrise_val > 0 else None
@@ -24319,7 +24633,7 @@ def evaluer_risque_triphase(id):
                     evaluation_en_cours.niveau_risque = niveau_risque
                     evaluation_en_cours.commentaire_validation = commentaire_validation
                     evaluation_en_cours.statut_validation = statut_validation
-                    evaluation_en_cours.updated_at = datetime.utcnow()
+                    evaluation_en_cours.updated_at = datetime.now(timezone.utc)  # CORRIGÉ
                     
                     db.session.commit()
                     flash('✅ Évaluation validée avec succès', 'success')
@@ -24364,15 +24678,15 @@ def evaluer_risque_triphase(id):
                     evaluation_en_cours.niveau_maitrise_conf = niveau_maitrise_conf if niveau_maitrise_conf > 0 else None
                     evaluation_en_cours.score_risque = score_risque
                     evaluation_en_cours.niveau_risque = niveau_risque
-                    evaluation_en_cours.evaluateur_final_id = current_user.id
-                    evaluation_en_cours.date_confirmation = datetime.utcnow()
+                    evaluation_en_cours.evaluateur_final_id = getattr(current_user, 'id', None)
+                    evaluation_en_cours.date_confirmation = datetime.now(timezone.utc)  # CORRIGÉ
                     evaluation_en_cours.commentaire_confirmation = commentaire_confirmation
-                    evaluation_en_cours.updated_at = datetime.utcnow()
+                    evaluation_en_cours.updated_at = datetime.now(timezone.utc)  # CORRIGÉ
                     
                     db.session.commit()
                     
                     # CORRECTION : Mettre à jour le risque aussi
-                    risque.derniere_evaluation_date = datetime.utcnow()
+                    risque.derniere_evaluation_date = datetime.now(timezone.utc)  # CORRIGÉ
                     risque.dernier_score_risque = score_risque
                     risque.dernier_niveau_risque = niveau_risque
                     db.session.commit()
@@ -24400,7 +24714,7 @@ def evaluer_risque_triphase(id):
         
         print(f"🎯 PHASE ACTUELLE: {phase_actuelle}")
         print(f"🎯 CAMPAGNE: {campagne_active.nom} (client_id: {campagne_active.client_id})")
-        print(f"🎯 RISQUE: {risque.reference} (client_id: {risque.client_id})")
+        print(f"🎯 RISQUE: {risque.reference} (client_id: {getattr(risque, 'client_id', None)})")
 
         # Pré-remplir le formulaire
         if evaluation_en_cours:
@@ -24425,7 +24739,7 @@ def evaluer_risque_triphase(id):
         print(f"❌ ERREUR CRITIQUE dans evaluer_risque_triphase: {str(e)}")
         import traceback
         traceback.print_exc()
-        flash(f'Une erreur technique est survenue. Veuillez réessayer.', 'error')
+        flash('Une erreur technique est survenue. Veuillez réessayer.', 'error')
         return redirect(url_for('liste_cartographies'))
 
 @app.route('/cartographie/<int:id>/nouvelle-campagne', methods=['GET', 'POST'])
