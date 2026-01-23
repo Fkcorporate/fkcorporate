@@ -24174,6 +24174,7 @@ def creer_kri_ia_depuis_risque(id):
     
     # Rediriger vers le formulaire avec pré-remplissage IA
     return redirect(url_for('nouveau_kri', risque_id=id))
+    
 @app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
 @login_required
 def evaluer_risque_triphase(id):
@@ -24202,9 +24203,44 @@ def evaluer_risque_triphase(id):
     except Exception as e:
         flash(f'Erreur de connexion à la base de données: {str(e)}', 'error')
         # CORRIGÉ : Utiliser le bon nom de route (probablement 'dashboard' ou 'accueil')
-        return redirect(url_for('dashboard'))  # Changez 'dashboard' par votre route d'accueil
+        # Si vous avez une route 'dashboard', sinon mettez 'login' ou 'index'
+        try:
+            return redirect(url_for('dashboard'))
+        except:
+            return redirect(url_for('login'))
     
     # =========================================
+    
+    # CORRECTION : Importer le formulaire depuis votre module forms
+    try:
+        # Essayez d'abord l'importation standard
+        from yourapp.forms import EvaluationRisqueForm
+    except ImportError:
+        try:
+            # Si votre structure est différente
+            from forms import EvaluationRisqueForm
+        except ImportError:
+            try:
+                # Si c'est dans le même fichier
+                EvaluationRisqueForm = globals().get('EvaluationRisqueForm')
+                if not EvaluationRisqueForm:
+                    # Créer un formulaire simple en cas d'urgence
+                    from flask_wtf import FlaskForm
+                    from wtforms import StringField, SelectField, TextAreaField, IntegerField, SubmitField
+                    from wtforms.validators import DataRequired, Optional
+                    
+                    class EvaluationRisqueForm(FlaskForm):
+                        referent_pre_evaluation_id = SelectField('Référent', coerce=int, validators=[Optional()])
+                        impact_pre = IntegerField('Impact', validators=[DataRequired()])
+                        probabilite_pre = IntegerField('Probabilité', validators=[DataRequired()])
+                        niveau_maitrise_pre = IntegerField('Niveau de maîtrise', validators=[Optional()])
+                        commentaire_pre_evaluation = TextAreaField('Commentaire', validators=[Optional()])
+                        submit_phase1 = SubmitField('Enregistrer la pré-évaluation')
+                        submit_phase2 = SubmitField('Valider l\'évaluation')
+                        submit_phase3 = SubmitField('Confirmer l\'évaluation')
+            except:
+                flash('Erreur: Formulaire non disponible', 'error')
+                return redirect(url_for('liste_risques'))
     
     form = EvaluationRisqueForm()
     
