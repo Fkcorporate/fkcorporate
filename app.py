@@ -24357,55 +24357,42 @@ print("✅ Fonctions de vérification d'accès définies")
 # FONCTION ÉVALUATION TRIPHASE (CORRIGÉE)
 # ========================
 
-@app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
+@@app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
 @login_required
 def evaluer_risque_triphase(id):
-    """Évaluer un risque dans le processus triphasé avec gestion robuste des sessions"""
+    """Évaluer un risque - VERSION COMPLÈTE avec imports et protection"""
     
-    # ========== 1. GESTION ROBUSTE DE LA SESSION ==========
+    # ========== IMPORTS LOCAUX NÉCESSAIRES ==========
+    from datetime import datetime, timezone
+    from sqlalchemy import text
+    import traceback
+    
+    # ========== FORCÉ: Réinitialisation session au début ==========
     try:
-        # S'assurer que la session est valide avant toute opération
-        if db.session.is_active:
-            try:
-                # Test de la connexion DB
-                db.session.execute(text('SELECT 1'))
-            except Exception as db_error:
-                print(f"⚠️ Session DB invalide détectée: {db_error}")
-                print("🔄 Rollback et réinitialisation de la session...")
-                db.session.rollback()
-                db.session.close()
-                # Recréer une session propre
-                db.session.begin()
+        # TEST FORCÉ - Si échec, on réinitialise TOUT
+        db.session.execute(text('SELECT 1'))
+    except Exception:
+        print("🚨 SESSION CORROMPUE au début de evaluer_risque_triphase")
+        db.session.rollback()
+        db.session.close()
+        db.session.begin()
+    
+    try:
+        # 1. Récupération SIMPLE du risque (sans relations)
+        risque = Risque.query.filter_by(id=id, is_archived=False).first_or_404()
         
-        # Vérification d'authentification
+        # 2. Vérification d'accès SIMPLE
         if not current_user.is_authenticated:
-            flash('Vous devez être connecté pour accéder à cette page', 'error')
+            flash('Non authentifié', 'error')
             return redirect(url_for('login'))
         
-        # Récupération des attributs utilisateur sans chargement lazy
         user_id = getattr(current_user, 'id', None)
         user_role = getattr(current_user, 'role', None)
         user_client_id = getattr(current_user, 'client_id', None)
         
-        # ========== 2. RÉCUPÉRATION DU RISQUE AVEC PRÉCHARGEMENT ==========
-        # Utiliser joinedload pour précharger les relations et éviter les requêtes lazy
-        from sqlalchemy.orm import joinedload
-        
-        risque_query = Risque.query\
-            .options(
-                joinedload(Risque.cartographie),
-                joinedload(Risque.kri)  # PRÉCHARGEMENT CRITIQUE du KRI
-            )\
-            .filter(Risque.id == id)\
-            .filter(Risque.is_archived == False)
-        
-        risque = risque_query.first_or_404()
-        
-        # ========== 3. VÉRIFICATION D'ACCÈS SIMPLIFIÉE ==========
-        # Vérification directe sans appeler check_client_access (qui peut causer des problèmes)
         if user_role != 'super_admin':
             if not user_client_id:
-                flash('Accès non autorisé: client non défini', 'error')
+                flash('Accès non autorisé', 'error')
                 return redirect(url_for('liste_cartographies'))
             
             risque_client_id = getattr(risque, 'client_id', None)
@@ -24413,10 +24400,21 @@ def evaluer_risque_triphase(id):
                 flash('Accès non autorisé à ce risque', 'error')
                 return redirect(url_for('liste_cartographies'))
         
-        # ========== 4. INITIALISATION DU FORMULAIRE ==========
+        # 3. Récupération MANUELLE du KRI (CRITIQUE !)
+        kri_associe = None
+        try:
+            # Test session avant requête KRI
+            db.session.execute(text('SELECT 1'))
+            kri_associe = KRI.query.filter_by(risque_id=id, est_actif=True).first()
+        except Exception as kri_error:
+            print(f"⚠️ Erreur récupération KRI: {kri_error}")
+            kri_associe = None
+        
+        # 4. Initialisation formulaire
+        from forms_evaluation import EvaluationTriPhaseForm
         form = EvaluationTriPhaseForm()
         
-        # Récupération des utilisateurs pour le select référent
+        # 5. Récupération des utilisateurs pour le select
         if user_role == 'super_admin':
             users = User.query.filter(User.is_active == True).all()
         else:
@@ -24427,40 +24425,34 @@ def evaluer_risque_triphase(id):
         
         form.referent_pre_evaluation_id.choices = [(0, 'Sélectionnez un référent...')] + [(u.id, f"{u.username} - {u.role}") for u in users]
         
-        # ========== 5. RÉCUPÉRATION DES AUTRES RISQUES ==========
-        # Utiliser get_client_filter simplifié
-        risques_cartographie_query = Risque.query\
-            .filter(Risque.cartographie_id == risque.cartographie_id)\
-            .filter(Risque.is_archived == False)
-        
-        # Filtre client pour les non-super-admin
-        if user_role != 'super_admin' and user_client_id:
-            risques_cartographie_query = risques_cartographie_query.filter(
+        # 6. Récupération des autres risques de la cartographie
+        if user_role == 'super_admin':
+            risques_cartographie = Risque.query.filter(
+                Risque.cartographie_id == risque.cartographie_id,
+                Risque.is_archived == False
+            ).order_by(Risque.reference.asc()).all()
+        else:
+            risques_cartographie = Risque.query.filter(
+                Risque.cartographie_id == risque.cartographie_id,
+                Risque.is_archived == False,
                 Risque.client_id == user_client_id
-            )
+            ).order_by(Risque.reference.asc()).all()
         
-        risques_cartographie = risques_cartographie_query\
-            .order_by(Risque.reference.asc())\
-            .all()
-        
-        # ========== 6. GESTION DE LA CAMPAGNE ==========
-        # Récupérer ou créer la campagne active
-        campagne_query = CampagneEvaluation.query\
-            .filter_by(
+        # 7. Gestion de la campagne
+        if user_role == 'super_admin':
+            campagne_active = CampagneEvaluation.query.filter_by(
                 cartographie_id=risque.cartographie_id,
                 statut='en_cours'
-            )
-        
-        # Filtre client pour les non-super-admin
-        if user_role != 'super_admin' and user_client_id:
-            campagne_query = campagne_query.filter(CampagneEvaluation.client_id == user_client_id)
-        
-        campagne_active = campagne_query.first()
+            ).first()
+        else:
+            campagne_active = CampagneEvaluation.query.filter_by(
+                cartographie_id=risque.cartographie_id,
+                statut='en_cours',
+                client_id=user_client_id
+            ).first()
         
         if not campagne_active:
-            # Créer une campagne par défaut
-            from datetime import datetime, timezone
-            
+            # Création campagne avec datetime IMPORTÉ
             annee_courante = datetime.now(timezone.utc).year
             campagne_active = CampagneEvaluation(
                 cartographie_id=risque.cartographie_id,
@@ -24471,7 +24463,6 @@ def evaluer_risque_triphase(id):
                 created_by=user_id
             )
             
-            # Assigner le client_id
             if user_role != 'super_admin' and user_client_id:
                 campagne_active.client_id = user_client_id
             else:
@@ -24487,22 +24478,22 @@ def evaluer_risque_triphase(id):
                 flash('Erreur lors de la création de la campagne', 'error')
                 return redirect(url_for('detail_cartographie', id=risque.cartographie_id))
         
-        # ========== 7. RÉCUPÉRATION DE L'ÉVALUATION EN COURS ==========
-        evaluation_query = EvaluationRisque.query\
-            .filter_by(
+        # 8. Récupération de l'évaluation en cours
+        if user_role == 'super_admin':
+            evaluation_en_cours = EvaluationRisque.query.filter_by(
                 risque_id=id,
                 campagne_id=campagne_active.id
-            )
+            ).first()
+        else:
+            evaluation_en_cours = EvaluationRisque.query.filter_by(
+                risque_id=id,
+                campagne_id=campagne_active.id,
+                client_id=user_client_id
+            ).first()
         
-        # Filtre client pour les non-super-admin
-        if user_role != 'super_admin' and user_client_id:
-            evaluation_query = evaluation_query.filter(EvaluationRisque.client_id == user_client_id)
-        
-        evaluation_en_cours = evaluation_query.first()
-        
-        # ========== 8. TRAITEMENT DU FORMULAIRE POST ==========
+        # 9. TRAITEMENT DU FORMULAIRE POST
         if request.method == 'POST':
-            print(f"📨 Soumission formulaire par {current_user.username}")
+            print(f"📨 Soumission formulaire par {getattr(current_user, 'username', 'N/A')}")
             
             try:
                 # Détection de la phase
@@ -24512,7 +24503,6 @@ def evaluer_risque_triphase(id):
                         bouton_soumis = value
                         break
                 
-                # Déduction si non détecté
                 if not bouton_soumis:
                     if 'impact_conf' in request.form:
                         bouton_soumis = 'submit_phase3'
@@ -24558,7 +24548,7 @@ def evaluer_risque_triphase(id):
                         evaluation_en_cours.statut_validation = 'en_attente'
                         evaluation_en_cours.updated_at = datetime.now(timezone.utc)
                     else:
-                        # Création
+                        # Création avec datetime IMPORTÉ
                         evaluation = EvaluationRisque(
                             risque_id=id,
                             campagne_id=campagne_active.id,
@@ -24583,7 +24573,7 @@ def evaluer_risque_triphase(id):
                         db.session.add(evaluation)
                         evaluation_en_cours = evaluation
                     
-                    # VALIDATION FINALE AVANT COMMIT
+                    # Commit
                     try:
                         db.session.commit()
                         flash(f'✅ Pré-évaluation enregistrée dans "{campagne_active.nom}"', 'success')
@@ -24611,7 +24601,7 @@ def evaluer_risque_triphase(id):
                     probabilite_val = request.form.get('probabilite_val')
                     niveau_maitrise_val = request.form.get('niveau_maitrise_val')
                     
-                    # Mise à jour
+                    # Mise à jour avec datetime IMPORTÉ
                     evaluation_en_cours.validateur_id = user_id
                     evaluation_en_cours.date_validation = datetime.now(timezone.utc)
                     evaluation_en_cours.statut_validation = statut_validation
@@ -24624,7 +24614,7 @@ def evaluer_risque_triphase(id):
                     if niveau_maitrise_val:
                         evaluation_en_cours.niveau_maitrise_val = int(niveau_maitrise_val)
                     
-                    # Calcul score final (utilise valeurs de validation ou pré-évaluation)
+                    # Calcul score final
                     impact_final = evaluation_en_cours.impact_val or evaluation_en_cours.impact_pre
                     probabilite_final = evaluation_en_cours.probabilite_val or evaluation_en_cours.probabilite_pre
                     score_risque = impact_final * probabilite_final
@@ -24660,7 +24650,7 @@ def evaluer_risque_triphase(id):
                     probabilite_conf = request.form.get('probabilite_conf')
                     niveau_maitrise_conf = request.form.get('niveau_maitrise_conf')
                     
-                    # Mise à jour
+                    # Mise à jour avec datetime IMPORTÉ
                     evaluation_en_cours.evaluateur_final_id = user_id
                     evaluation_en_cours.date_confirmation = datetime.now(timezone.utc)
                     evaluation_en_cours.commentaire_confirmation = commentaire_confirmation
@@ -24672,7 +24662,7 @@ def evaluer_risque_triphase(id):
                     if niveau_maitrise_conf:
                         evaluation_en_cours.niveau_maitrise_conf = int(niveau_maitrise_conf)
                     
-                    # Calcul score final (priorité: confirmation > validation > pré-évaluation)
+                    # Calcul score final
                     impact_final = (
                         evaluation_en_cours.impact_conf or 
                         evaluation_en_cours.impact_val or 
@@ -24709,13 +24699,11 @@ def evaluer_risque_triphase(id):
             except Exception as form_error:
                 db.session.rollback()
                 print(f"❌ Erreur traitement formulaire: {form_error}")
-                import traceback
                 traceback.print_exc()
                 flash('Erreur lors du traitement du formulaire', 'error')
                 return redirect(url_for('evaluer_risque_triphase', id=id))
         
-        # ========== 9. PRÉPARATION DES DONNÉES POUR LE TEMPLATE ==========
-        # Détermination de la phase actuelle
+        # 10. Détermination de la phase actuelle
         phase_actuelle = 'phase1'
         if evaluation_en_cours:
             if evaluation_en_cours.date_confirmation:
@@ -24725,10 +24713,7 @@ def evaluer_risque_triphase(id):
             elif evaluation_en_cours.date_pre_evaluation:
                 phase_actuelle = 'phase2'
         
-        # Récupération du KRI PRÉCHARGÉ (CRITIQUE !)
-        kri_associe = getattr(risque, 'kri', None)
-        
-        # Pré-remplissage du formulaire
+        # 11. Pré-remplissage du formulaire
         if evaluation_en_cours:
             form.referent_pre_evaluation_id.data = evaluation_en_cours.referent_pre_evaluation_id or 0
             form.impact_pre.data = evaluation_en_cours.impact_pre or 0
@@ -24736,15 +24721,14 @@ def evaluer_risque_triphase(id):
             form.niveau_maitrise_pre.data = evaluation_en_cours.niveau_maitrise_pre or 0
             form.commentaire_pre_evaluation.data = evaluation_en_cours.commentaire_pre_evaluation or ''
         
-        # ========== 10. VÉRIFICATION FINALE DE LA SESSION ==========
-        # S'assurer que la session est propre avant le rendu
+        # 12. Vérification finale de la session
         try:
             db.session.execute(text('SELECT 1'))
         except Exception:
             db.session.rollback()
             print("⚠️ Session nettoyée avant rendu template")
         
-        # ========== 11. RENDU DU TEMPLATE ==========
+        # 13. RENDU DU TEMPLATE avec KRI déjà chargé
         return render_template('cartographie/evaluation_triphase.html',
                              form=form,
                              risque=risque,
@@ -24754,11 +24738,10 @@ def evaluer_risque_triphase(id):
                              referents=users,
                              risques_cartographie=risques_cartographie,
                              kri_associe=kri_associe)  # KRI déjà chargé !
-    
+        
     except Exception as global_error:
         # Gestion d'erreur globale
         print(f"❌ ERREUR GLOBALE dans evaluer_risque_triphase: {global_error}")
-        import traceback
         traceback.print_exc()
         
         # Nettoyage complet de la session
