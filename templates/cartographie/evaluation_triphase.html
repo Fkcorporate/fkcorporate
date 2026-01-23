@@ -725,7 +725,7 @@
                     <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>KRI Associé</h5>
                 </div>
                 <div class="card-body">
-                    {% if risque.kri %}
+                    {% if risque.kri is defined and risque.kri %}
                     <div class="mb-3">
                         <strong class="d-block text-muted small">Indicateur</strong>
                         <span>{{ risque.kri.nom }}</span>
