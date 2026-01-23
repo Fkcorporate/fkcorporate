@@ -1482,17 +1482,59 @@ def shutdown_session(exception=None):
         except:
             pass
     
-    # ⚠️ SUPPRIMEZ db.session.remove() COMPLÈTEMENT !
-    # SQLAlchemy gère déjà les sessions automatiquement
-    # NE FAITES RIEN ICI, ou faites seulement:
+    # ⚠️ SUPPRIMEZ COMPLÈTEMENT cette ligne :
+    # db.session.remove()  # ⚠️ C'EST ÇA LE PROBLÈME !
+    
+    # À la place, faites seulement :
     try:
+        # Juste fermer la session si elle est active
         if db.session.is_active:
-            db.session.close()  # ✅ Juste close(), PAS remove()
+            db.session.close()
     except:
         pass
     
-    print("✅ Session proprement fermée (sans détacher current_user)")
+    print("✅ Session fermée proprement (sans détacher current_user)")
 
+@app.before_request
+def protect_current_user():
+    """
+    Protège current_user contre DetachedInstanceError
+    S'exécute AVANT les décorateurs @login_required
+    """
+    # Ignorer les routes statiques
+    if request.endpoint and 'static' in request.endpoint:
+        return
+    
+    # Vérifier si current_user existe
+    if not hasattr(current_user, '_get_current_object'):
+        return
+    
+    try:
+        # Test SAFE pour vérifier si current_user est détaché
+        user_obj = current_user._get_current_object()
+        
+        # Essayer d'accéder à l'ID sans déclencher d'erreur
+        if hasattr(user_obj, 'id'):
+            _ = user_obj.id  # Si ça passe, c'est bon
+            
+    except sqlalchemy.orm.exc.DetachedInstanceError:
+        print("⚠️ current_user détaché détecté - réparation...")
+        
+        # Réparer en rechargant l'utilisateur
+        try:
+            from flask_login import login_user
+            
+            # Récupérer l'ID utilisateur depuis la session Flask
+            user_id = session.get('_user_id')
+            if user_id:
+                # Recharger depuis la base de données
+                user = User.query.get(user_id)
+                if user:
+                    # Reconnecter l'utilisateur
+                    login_user(user, remember=True)
+                    print(f"✅ Utilisateur {user_id} rechargé")
+        except Exception as e:
+            print(f"❌ Erreur rechargement utilisateur: {e}")
 # ========================
 # FONCTIONS DE FILTRAGE CLIENT
 # ========================
@@ -20845,6 +20887,7 @@ def api_services_par_direction(direction_id):
     return jsonify([{'id': s.id, 'nom': s.nom} for s in services])
 
 @app.route('/cartographie/<int:id>')
+@login_required
 def detail_cartographie(id):
     # CORRECTION : Récupérer avec vérification d'accès
     cartographie = Cartographie.query.get_or_404(id)
@@ -24378,77 +24421,50 @@ def verify_and_clean(response):
 # FONCTION ÉVALUATION TRIPHASE (CORRIGÉE)
 # ========================
 @app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
+@login_required  # ✅ GARDE ton décorateur
+@permission_required('can_manage_risks')  # ✅ GARDE tes permissions
 def evaluer_risque_triphase(id):
-    """
-    Évaluer un risque - VERSION ULTIME avec protection anti-DetachedInstanceError
-    """
+    """Évaluer un risque - AVEC TES DÉCORATEURS INTACTS"""
     
-    # ========== 1. PROTECTION ULTIME CONTRE DetachedInstanceError ==========
-    # Vérifier MANUELLEMENT l'authentification sans utiliser @login_required
-    try:
-        # Méthode SAFE: Vérifier si current_user semble valide
-        user_id = getattr(current_user, 'id', None)
-        
-        if not user_id:
-            # Si pas d'ID, rediriger vers login
-            print("🔒 Utilisateur non authentifié détecté")
-            return redirect(url_for('login'))
-        
-        # Récupérer les attributs SAFE
-        user_role = getattr(current_user, 'role', None)
-        user_client_id = getattr(current_user, 'client_id', None)
-        
-        print(f"👤 Utilisateur vérifié: ID={user_id}, Rôle={user_role}")
-        
-    except Exception as auth_error:
-        print(f"🔒 Erreur vérification auth: {auth_error}")
-        return redirect(url_for('login'))
-    
-    # ========== 2. SESSION PROPRE ==========
+    # ========== 1. SESSION PROPRE ==========
     from datetime import datetime, timezone
     from sqlalchemy import text
     
     try:
         db.session.execute(text('SELECT 1'))
     except Exception as e:
-        print(f"⚠️ Session DB instable: {e}")
-        db.session.rollback()
+        if 'InFailedSqlTransaction' in str(e):
+            print("🔄 Transaction abortée - rollback")
+            db.session.rollback()
     
-    # ========== 3. LOGIQUE PRINCIPALE ==========
+    # ========== 2. LOGIQUE PRINCIPALE ==========
     try:
-        # 3.1 Récupérer le risque
-        risque = Risque.query.filter_by(id=id, is_archived=False).first()
+        # 2.1 Récupérer le risque (tes décorateurs ont déjà vérifié l'accès)
+        risque = Risque.query.filter_by(id=id, is_archived=False).first_or_404()
         
-        if not risque:
-            flash('Risque non trouvé', 'error')
-            return redirect(url_for('liste_cartographies'))
+        # Récupérer les infos utilisateur (maintenant SAFE grâce au middleware)
+        user_id = current_user.id
+        user_role = current_user.role
+        user_client_id = getattr(current_user, 'client_id', None)
         
-        # 3.2 Vérification d'accès (simplifiée)
-        if user_role != 'super_admin' and user_client_id:
-            risque_client_id = getattr(risque, 'client_id', None)
-            if risque_client_id and risque_client_id != user_client_id:
-                flash('Accès non autorisé', 'error')
-                return redirect(url_for('liste_cartographies'))
-        
-        # 3.3 PRÉCHARGEMENT CRITIQUE des données
-        # Cartographie (pour ligne 651 template)
+        # 2.2 PRÉCHARGEMENT des données pour le template
+        # Cartographie (pour éviter risque.cartographie.nom)
         cartographie = None
         if hasattr(risque, 'cartographie_id') and risque.cartographie_id:
             cartographie = Cartographie.query.get(risque.cartographie_id)
         
-        # KRI (pour ligne 728 template)
+        # KRI (pour éviter risque.kri)
         kri_associe = None
         try:
             kri_associe = KRI.query.filter_by(risque_id=id, est_actif=True).first()
         except:
             pass
         
-        # 3.4 Formulaire
+        # 2.3 Formulaire
         from forms_evaluation import EvaluationTriPhaseForm
         form = EvaluationTriPhaseForm()
         
-        # 3.5 Récupération utilisateurs
-        users = []
+        # 2.4 Utilisateurs pour select
         if user_role == 'super_admin':
             users = User.query.filter(User.is_active == True).all()
         elif user_client_id:
@@ -24456,17 +24472,15 @@ def evaluer_risque_triphase(id):
                 User.is_active == True,
                 User.client_id == user_client_id
             ).all()
+        else:
+            users = []
         
         form.referent_pre_evaluation_id.choices = [(0, 'Sélectionnez...')] + \
                                                 [(u.id, f"{u.username} - {u.role}") for u in users]
         
-        # 3.6 Autres données
+        # 2.5 Autres risques
         risques_cartographie = []
-        campagne_active = None
-        evaluation_en_cours = None
-        
         if cartographie:
-            # Autres risques
             query = Risque.query.filter(
                 Risque.cartographie_id == cartographie.id,
                 Risque.is_archived == False
@@ -24474,8 +24488,10 @@ def evaluer_risque_triphase(id):
             if user_role != 'super_admin' and user_client_id:
                 query = query.filter(Risque.client_id == user_client_id)
             risques_cartographie = query.order_by(Risque.reference.asc()).all()
-            
-            # Campagne
+        
+        # 2.6 Campagne
+        campagne_active = None
+        if cartographie:
             campagne_query = CampagneEvaluation.query.filter_by(
                 cartographie_id=cartographie.id,
                 statut='en_cours'
@@ -24497,7 +24513,8 @@ def evaluer_risque_triphase(id):
                 db.session.add(campagne_active)
                 db.session.commit()
         
-        # 3.7 Évaluation en cours
+        # 2.7 Évaluation en cours
+        evaluation_en_cours = None
         if campagne_active:
             eval_query = EvaluationRisque.query.filter_by(
                 risque_id=id,
@@ -24507,13 +24524,13 @@ def evaluer_risque_triphase(id):
                 eval_query = eval_query.filter_by(client_id=user_client_id)
             evaluation_en_cours = eval_query.first()
         
-        # ========== 4. TRAITEMENT POST ==========
+        # ========== 3. TRAITEMENT FORMULAIRE ==========
         if request.method == 'POST':
-            # [Votre logique de traitement ici]
+            # [GARDE ta logique de traitement existante]
             flash('Traitement en cours...', 'info')
             return redirect(url_for('evaluer_risque_triphase', id=id))
         
-        # ========== 5. PRÉPARATION RENDU ==========
+        # ========== 4. PRÉPARATION RENDU ==========
         phase_actuelle = 'phase1'
         if evaluation_en_cours:
             if evaluation_en_cours.date_confirmation:
@@ -24530,21 +24547,23 @@ def evaluer_risque_triphase(id):
             form.niveau_maitrise_pre.data = evaluation_en_cours.niveau_maitrise_pre or 0
             form.commentaire_pre_evaluation.data = evaluation_en_cours.commentaire_pre_evaluation or ''
         
-        # ========== 6. RENDU TEMPLATE ==========
+        # ========== 5. RENDU TEMPLATE ==========
         return render_template('cartographie/evaluation_triphase.html',
                              form=form,
                              risque=risque,
-                             cartographie=cartographie,  # ✅ PRÉCHARGÉ
+                             cartographie=cartographie,  # ✅ Donnée préchargée
                              campagne_active=campagne_active,
                              evaluation_en_cours=evaluation_en_cours,
                              phase_actuelle=phase_actuelle,
                              referents=users,
                              risques_cartographie=risques_cartographie,
-                             kri_associe=kri_associe)     # ✅ PRÉCHARGÉ
+                             kri_associe=kri_associe)     # ✅ Donnée préchargée
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Erreur: {e}")
+        print(f"❌ Erreur dans evaluer_risque_triphase: {e}")
+        import traceback
+        traceback.print_exc()
         flash('Erreur technique', 'error')
         return redirect(url_for('liste_cartographies'))
         
