@@ -20845,7 +20845,6 @@ def api_services_par_direction(direction_id):
     return jsonify([{'id': s.id, 'nom': s.nom} for s in services])
 
 @app.route('/cartographie/<int:id>')
-@login_required
 def detail_cartographie(id):
     # CORRECTION : Récupérer avec vérification d'accès
     cartographie = Cartographie.query.get_or_404(id)
