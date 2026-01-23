@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1>Liste des risques</h1>
+            
+            <!-- Statistiques -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ stats.total }}</h5>
+                            <p class="card-text">Risques totaux</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ stats.critiques }}</h5>
+                            <p class="card-text">Risques critiques</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ stats.en_cours }}</h5>
+                            <p class="card-text">En cours</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ stats.archives }}</h5>
+                            <p class="card-text">Archivés</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Table des risques -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Liste des risques</h5>
+                </div>
+                <div class="card-body">
+                    {% if risques.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Référence</th>
+                                    <th>Intitulé</th>
+                                    <th>Cartographie</th>
+                                    <th>Créé le</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for risque in risques.items %}
+                                <tr>
+                                    <td>{{ risque.reference }}</td>
+                                    <td>{{ risque.intitule }}</td>
+                                    <td>
+                                        {% if risque.cartographie %}
+                                            {{ risque.cartographie.nom }}
+                                        {% else %}
+                                            Non spécifié
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ risque.created_at.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('detail_risque', id=risque.id) }}" 
+                                           class="btn btn-sm btn-info">
+                                            Détails
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if risques.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('liste_risques', page=risques.prev_num) }}">
+                                    Précédent
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in risques.iter_pages() %}
+                                {% if page_num %}
+                                    <li class="page-item {% if page_num == risques.page %}active{% endif %}">
+                                        <a class="page-link" href="{{ url_for('liste_risques', page=page_num) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if risques.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('liste_risques', page=risques.next_num) }}">
+                                    Suivant
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Aucun risque trouvé.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
