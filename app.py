@@ -24357,7 +24357,7 @@ print("✅ Fonctions de vérification d'accès définies")
 # FONCTION ÉVALUATION TRIPHASE (CORRIGÉE)
 # ========================
 
-@@app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
+@app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
 @login_required
 def evaluer_risque_triphase(id):
     """Évaluer un risque - VERSION COMPLÈTE avec imports et protection"""
