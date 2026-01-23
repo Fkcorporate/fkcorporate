@@ -26255,7 +26255,7 @@ def liste_risques():
         .options(
             joinedload(Risque.cartographie),
             joinedload(Risque.createur),
-            joinedload(Risque.kri),  # CORRECTION : kri au singulier, pas kris
+            joinedload(Risque.kris),
             # Ne pas charger toutes les évaluations, juste les nécessaires
             joinedload(Risque.evaluations)
         )\
@@ -26315,7 +26315,7 @@ def liste_risques():
         'sans_evaluations': get_client_filter(Risque).filter_by(is_archived=False)
             .filter(~Risque.evaluations.any()).count(),
         'avec_kri': get_client_filter(Risque).filter_by(is_archived=False)
-            .filter(Risque.kri != None).count()  # CORRECTION : kri != None, pas kris.any()
+            .filter(Risque.kris.any()).count()
     }
     
     # ========================
@@ -26349,11 +26349,8 @@ def liste_risques():
         else:
             risque.derniere_evaluation = None
         
-        # Compter le nombre de KRI actifs - CORRECTION : risque.kri est un objet unique, pas une liste
-        if risque.kri and getattr(risque.kri, 'est_actif', True):
-            risque.nb_kri_actifs = 1
-        else:
-            risque.nb_kri_actifs = 0
+        # Compter le nombre de KRI actifs
+        risque.nb_kri_actifs = len([k for k in risque.kris if getattr(k, 'est_actif', True)])
     
     # ========================
     # 8. RENDU
