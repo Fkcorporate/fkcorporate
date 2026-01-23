@@ -20256,7 +20256,6 @@ def debug_synchronisation():
     <a href="{{ url_for('dashboard') }}">Retour au dashboard</a>
     """
 
-
 @app.route('/cartographie')
 @login_required
 def liste_cartographies():
@@ -20305,7 +20304,7 @@ def liste_cartographies():
         .filter_by(is_archived=False)\
         .options(joinedload(Cartographie.direction))\
         .options(joinedload(Cartographie.service))\
-        .options(joinedload(Cartographie.risques))
+        .options(joinedload(Cartographie.risques))  # Note: pas besoin de joinedload pour kri ici
     
     # Debug : voir la requête SQL générée
     print(f"🔍 REQUÊTE SQL: {str(cartographies_query)}")
@@ -20324,7 +20323,7 @@ def liste_cartographies():
         if not check_client_access(cartographie):
             print(f"⚠️ ALERTE: L'utilisateur n'a pas accès à la cartographie {cartographie.id}")
     
-    # Précalcul des risques actifs
+    # Précalcul des risques actifs et de leurs KRI
     for cartographie in cartographies:
         # Filtrer uniquement les risques non archivés
         risques_actifs = []
@@ -20337,6 +20336,12 @@ def liste_cartographies():
             # Vérifier l'archivage
             est_archive = getattr(risque, 'is_archived', False)
             if not est_archive:
+                # Charger explicitement le KRI associé si nécessaire
+                # CORRECTION : Utiliser la relation kri (singulier) et non kris (pluriel)
+                if risque.kri:  # Chargement lazy, mais vous pouvez le précharger si nécessaire
+                    # Pour précharger toutes les relations du KRI
+                    db.session.refresh(risque.kri) if hasattr(risque, 'kri') else None
+                
                 risques_actifs.append(risque)
         
         cartographie.risques_actifs = risques_actifs
@@ -26256,7 +26261,7 @@ def liste_risques():
         .options(
             joinedload(Risque.cartographie),
             joinedload(Risque.createur),
-            joinedload(Risque.kris),
+            joinedload(Risque.kri),
             # Ne pas charger toutes les évaluations, juste les nécessaires
             joinedload(Risque.evaluations)
         )\
@@ -26316,7 +26321,7 @@ def liste_risques():
         'sans_evaluations': get_client_filter(Risque).filter_by(is_archived=False)
             .filter(~Risque.evaluations.any()).count(),
         'avec_kri': get_client_filter(Risque).filter_by(is_archived=False)
-            .filter(Risque.kris.any()).count()
+            .filter(Risque.kri.any()).count()
     }
     
     # ========================
@@ -26351,7 +26356,7 @@ def liste_risques():
             risque.derniere_evaluation = None
         
         # Compter le nombre de KRI actifs
-        risque.nb_kri_actifs = len([k for k in risque.kris if getattr(k, 'est_actif', True)])
+        risque.nb_kri_actifs = len([k for k in Risque.kri if getattr(k, 'est_actif', True)])
     
     # ========================
     # 8. RENDU
