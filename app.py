@@ -35,6 +35,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from markupsafe import escape, Markup
 from sqlalchemy import event, and_, or_, not_, text
+from sqlalchemy.exc import SQLAlchemyError  # AJOUTEZ ICI
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # ========================
