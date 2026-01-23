@@ -26372,7 +26372,7 @@ def liste_risques():
         .options(
             joinedload(Risque.cartographie),
             joinedload(Risque.createur),
-            joinedload(Risque.kris),
+            joinedload(Risque.kri),
             # Ne pas charger toutes les évaluations, juste les nécessaires
             joinedload(Risque.evaluations)
         )\
