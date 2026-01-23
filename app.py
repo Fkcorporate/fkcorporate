@@ -24174,178 +24174,72 @@ def creer_kri_ia_depuis_risque(id):
     
     # Rediriger vers le formulaire avec pré-remplissage IA
     return redirect(url_for('nouveau_kri', risque_id=id))
-    
-@app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
+    @app.route('/risque/<int:id>/evaluation-triphase', methods=['GET', 'POST'])
 @login_required
 def evaluer_risque_triphase(id):
-    """
-    Évaluation triphasée d'un risque
-    Phase 1: Pré-évaluation par le référent
-    Phase 2: Validation par le valideur
-    Phase 3: Confirmation finale
-    """
+    # CORRECTION : Récupérer avec vérification d'accès
+    risque = Risque.query.get_or_404(id)
     
-    # ========== CORRECTION CRITIQUE ==========
-    # FORCER UN ROLLBACK au début pour éviter les transactions abortées
-    try:
-        db.session.rollback()
-        db.session.close()
-    except:
-        pass
-    
-    # Réinitialiser la session
-    db.session.remove()
-    
-    # Test de connexion DB - CORRECTION : utiliser text() pour les requêtes SQL brutes
-    try:
-        from sqlalchemy import text
-        db.session.execute(text('SELECT 1'))
-    except Exception as e:
-        flash(f'Erreur de connexion à la base de données: {str(e)}', 'error')
-        # CORRIGÉ : Utiliser le bon nom de route (probablement 'dashboard' ou 'accueil')
-        # Si vous avez une route 'dashboard', sinon mettez 'login' ou 'index'
-        try:
-            return redirect(url_for('dashboard'))
-        except:
-            return redirect(url_for('login'))
-    
-    # =========================================
-    
-    # CORRECTION : Importer le formulaire depuis votre module forms
-    try:
-        # Essayez d'abord l'importation standard
-        from yourapp.forms import EvaluationRisqueForm
-    except ImportError:
-        try:
-            # Si votre structure est différente
-            from forms import EvaluationRisqueForm
-        except ImportError:
-            try:
-                # Si c'est dans le même fichier
-                EvaluationRisqueForm = globals().get('EvaluationRisqueForm')
-                if not EvaluationRisqueForm:
-                    # Créer un formulaire simple en cas d'urgence
-                    from flask_wtf import FlaskForm
-                    from wtforms import StringField, SelectField, TextAreaField, IntegerField, SubmitField
-                    from wtforms.validators import DataRequired, Optional
-                    
-                    class EvaluationRisqueForm(FlaskForm):
-                        referent_pre_evaluation_id = SelectField('Référent', coerce=int, validators=[Optional()])
-                        impact_pre = IntegerField('Impact', validators=[DataRequired()])
-                        probabilite_pre = IntegerField('Probabilité', validators=[DataRequired()])
-                        niveau_maitrise_pre = IntegerField('Niveau de maîtrise', validators=[Optional()])
-                        commentaire_pre_evaluation = TextAreaField('Commentaire', validators=[Optional()])
-                        submit_phase1 = SubmitField('Enregistrer la pré-évaluation')
-                        submit_phase2 = SubmitField('Valider l\'évaluation')
-                        submit_phase3 = SubmitField('Confirmer l\'évaluation')
-            except:
-                flash('Erreur: Formulaire non disponible', 'error')
-                return redirect(url_for('liste_risques'))
-    
-    form = EvaluationRisqueForm()
-    
-    # Vérifier si l'utilisateur a accès à ce risque
-    try:
-        # Utiliser joinedload pour éviter les requêtes lazy
-        from sqlalchemy.orm import joinedload
-        
-        risque_query = Risque.query.options(joinedload(Risque.cartographie))
-        
-        # Appliquer le filtre client si nécessaire
-        if current_user.role != 'super_admin' and hasattr(current_user, 'client_id'):
-            risque_query = risque_query.filter_by(client_id=current_user.client_id)
-        
-        risque = risque_query.get_or_404(id)
-        
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erreur lors du chargement du risque: {str(e)}', 'error')
+    # Vérifier l'accès
+    if not check_client_access(risque):
+        flash('Accès non autorisé à ce risque', 'error')
         return redirect(url_for('liste_risques'))
     
-    # Vérifier les permissions
-    if not peut_gerer_risque(risque, current_user):
-        flash('Vous n\'avez pas les permissions nécessaires pour évaluer ce risque', 'error')
-        return redirect(url_for('detail_risque', id=id))
+    form = EvaluationTriPhaseForm()
     
-    # Récupérer les utilisateurs disponibles (avec filtre client)
-    try:
-        users_query = User.query.filter_by(is_active=True)
-        if current_user.role != 'super_admin' and hasattr(current_user, 'client_id'):
-            users_query = users_query.filter_by(client_id=current_user.client_id)
-        
-        users = users_query.order_by(User.username).all()
-        form.referent_pre_evaluation_id.choices = [(0, '-- Sélectionner un référent --')] + \
-                                                  [(u.id, f"{u.username} ({u.role})") for u in users]
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erreur lors du chargement des utilisateurs: {str(e)}', 'error')
-        return redirect(url_for('detail_risque', id=id))
+    # CORRECTION : Récupérer uniquement les utilisateurs du même client
+    if current_user.role == 'super_admin':
+        users = User.query.filter(User.is_active == True).all()
+    else:
+        users = get_client_filter(User).filter(User.is_active == True).all()
     
-    # Récupérer les autres risques de la même cartographie
-    try:
-        risques_cartographie = Risque.query.filter_by(
+    form.referent_pre_evaluation_id.choices = [(0, 'Sélectionnez un référent...')] + [(u.id, f"{u.username} - {u.role}") for u in users]
+    
+    # CORRECTION : Récupérer les risques de la même cartographie avec filtre client
+    risques_cartographie = get_client_filter(Risque)\
+        .filter_by(cartographie_id=risque.cartographie_id)\
+        .order_by(Risque.is_archived.asc(), Risque.reference.asc())\
+        .all()
+    
+    # ========== GESTION DE LA CAMPAGNE - CORRECTION MULTI-TENANT ==========
+    # CORRECTION : Utiliser get_client_filter pour les campagnes
+    campagne_active = get_client_filter(CampagneEvaluation)\
+        .filter_by(
             cartographie_id=risque.cartographie_id,
-            is_archived=False
+            statut='en_cours'
+        ).first()
+    
+    if not campagne_active:
+        # Créer une campagne par défaut avec le bon client_id
+        annee_courante = datetime.now().year
+        campagne_active = CampagneEvaluation(
+            cartographie_id=risque.cartographie_id,
+            nom=f"Campagne {annee_courante}",
+            description=f"Évaluation annuelle {annee_courante}",
+            date_debut=datetime.now().date(),
+            statut='en_cours',
+            created_by=current_user.id
         )
         
+        # CORRECTION CRITIQUE : Ajouter le client_id selon l'utilisateur
         if current_user.role != 'super_admin' and hasattr(current_user, 'client_id'):
-            risques_cartographie = risques_cartographie.filter_by(client_id=current_user.client_id)
+            campagne_active.client_id = current_user.client_id
+        elif current_user.role == 'super_admin':
+            # Super admin peut ne pas avoir de client_id ou utiliser celui du risque
+            campagne_active.client_id = risque.client_id
         
-        risques_cartographie = risques_cartographie.order_by(Risque.reference).all()
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erreur lors du chargement des risques: {str(e)}', 'error')
-        risques_cartographie = []
-    
-    # Gestion de la campagne d'évaluation
-    try:
-        campagne_active = get_client_filter(CampagneEvaluation)\
-            .filter_by(
-                cartographie_id=risque.cartographie_id,
-                statut='en_cours'
-            ).first()
-        
-        if not campagne_active:
-            # Créer une campagne par défaut avec le bon client_id
-            annee_courante = datetime.now().year
-            campagne_active = CampagneEvaluation(
-                cartographie_id=risque.cartographie_id,
-                nom=f"Campagne {annee_courante}",
-                description=f"Évaluation annuelle {annee_courante}",
-                date_debut=datetime.now().date(),
-                statut='en_cours',
-                created_by=current_user.id
-            )
-            
-            # CORRECTION : Ajouter le client_id selon l'utilisateur
-            if current_user.role != 'super_admin' and hasattr(current_user, 'client_id'):
-                campagne_active.client_id = current_user.client_id
-            elif current_user.role == 'super_admin':
-                # Super admin peut ne pas avoir de client_id ou utiliser celui du risque
-                campagne_active.client_id = risque.client_id
-            
-            db.session.add(campagne_active)
-            db.session.commit()
-            print(f"✅ Campagne créée pour client {campagne_active.client_id}: {campagne_active.nom}")
-        
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erreur lors de la gestion de la campagne: {str(e)}', 'error')
-        return redirect(url_for('detail_risque', id=id))
+        db.session.add(campagne_active)
+        db.session.commit()
+        print(f"✅ Campagne créée pour client {campagne_active.client_id}: {campagne_active.nom}")
     
     # CORRECTION : Récupérer l'évaluation avec filtre client
-    try:
-        evaluation_en_cours = get_client_filter(EvaluationRisque)\
-            .filter_by(
-                risque_id=id,
-                campagne_id=campagne_active.id
-            ).first()
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erreur lors du chargement de l\'évaluation: {str(e)}', 'error')
-        evaluation_en_cours = None
+    evaluation_en_cours = get_client_filter(EvaluationRisque)\
+        .filter_by(
+            risque_id=id,
+            campagne_id=campagne_active.id
+        ).first()
     
-    # ========== GESTION DE LA SOUMISSION DU FORMULAIRE ==========
+    # Gestion de la soumission du formulaire
     if request.method == 'POST':
         print(f"📨 Formulaire soumis par {current_user.username} (client_id: {current_user.client_id})")
         print(f"🎯 Campagne active: {campagne_active.nom} (client_id: {campagne_active.client_id})")
@@ -24550,10 +24444,7 @@ def evaluer_risque_triphase(id):
             print(f"❌ Erreur: {str(e)}")
             import traceback
             traceback.print_exc()
-            flash(f'❌ Erreur lors de l\'enregistrement: {str(e)}', 'error')
-            return redirect(url_for('evaluer_risque_triphase', id=id))
-    
-    # ========== PRÉPARATION DES DONNÉES POUR L'AFFICHAGE ==========
+            flash(f'❌ Erreur: {str(e)}', 'error')
     
     # Déterminer la phase actuelle
     phase_actuelle = 'phase1'
@@ -24577,17 +24468,9 @@ def evaluer_risque_triphase(id):
         form.niveau_maitrise_pre.data = evaluation_en_cours.niveau_maitrise_pre or 0
         form.commentaire_pre_evaluation.data = evaluation_en_cours.commentaire_pre_evaluation or ''
 
-    # Préparer les données pour le template
-    try:
-        cartographie_nom = risque.cartographie.nom if risque.cartographie else "Non spécifié"
-    except:
-        cartographie_nom = "Non spécifié"
-        db.session.rollback()  # Nettoyer en cas d'erreur
-    
     return render_template('cartographie/evaluation_triphase.html',
                          form=form,
                          risque=risque,
-                         cartographie_nom=cartographie_nom,  # Passer explicitement
                          campagne_active=campagne_active,
                          evaluation_en_cours=evaluation_en_cours,
                          phase_actuelle=phase_actuelle,
