@@ -33,7 +33,6 @@ class User(UserMixin, db.Model):
     is_client_admin = db.Column(db.Boolean, default=False)
     can_manage_users = db.Column(db.Boolean, default=False)
 
-    can_manage_users = db.Column(db.Boolean, default=False)
     can_view_users_list = db.Column(db.Boolean, default=False)
     
     # MODIFIER LA RELATION :
