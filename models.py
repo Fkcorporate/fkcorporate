@@ -1610,11 +1610,6 @@ class Audit(db.Model):
                                     back_populates='audit', 
                                     lazy=True, 
                                     cascade='all, delete-orphan')
-    responsable = db.relationship('User',
-    back_populates='audits_realises',
-    foreign_keys='Audit.responsable_id',
-    overlaps="audits_dont_je_suis_responsable",  # <-- AJOUTER
-    lazy=True)
     
     
     # Méthodes pour gérer l'équipe
