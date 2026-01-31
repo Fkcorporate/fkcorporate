@@ -60,7 +60,7 @@
                         
                         <div class="mb-3">
                             {{ liste_form.valeurs.label(class="form-label fw-bold") }}
-                            {{ liste_form.valeurs(class="form-control" + (" is-invalid" if liste_form.valeurs.errors else ""), rows=5, placeholder="valeur|Libellé affiché&#10;autre_valeur|Autre libellé") }}
+                            {{ liste_form.valeurs(class="form-control" + (" is-invalid" if liste_form.valeurs.errors else ""), rows=5, placeholder="valeur|Libellé affiché") }}
                             {% if liste_form.valeurs.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in liste_form.valeurs.errors %}
