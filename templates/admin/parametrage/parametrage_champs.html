@@ -26,7 +26,7 @@
                         
                         <div class="mb-3">
                             {{ form.nom_technique.label(class="form-label fw-bold") }}
-                            {{ form.nom_technique(class="form-control" + (" is-invalid" if form.nom_technique.errors else ""), placeholder="ex: impact_financier") }}
+                            {{ form.nom_technique(class="form-control" + (" is-invalid" if form.nom_technique.errors else ""), placeholder=t("ex: financial_impact")) }}
                             {% if form.nom_technique.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.nom_technique.errors %}
