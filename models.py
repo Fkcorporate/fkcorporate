@@ -1535,7 +1535,6 @@ class VeilleDocument(db.Model):  # Nouveau
     uploader = db.relationship('User', back_populates='documents_veille')
 
 # -------------------- AUDIT --------------------
-# -------------------- AUDIT --------------------
 class Audit(db.Model):
     __tablename__ = 'audits'
     
@@ -1559,7 +1558,7 @@ class Audit(db.Model):
     portee = db.Column(db.Text)
     objectifs = db.Column(db.Text)
     criteres = db.Column(db.Text)
-    processus_id = db.Column(db.Integer, db.ForeignKey('processus.id'))
+    processus_id = db.Column(db.Integer, db.ForeignKey('processus_activite.id'), nullable=True)
     responsable_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     equipe_audit_ids = db.Column(db.String(500))
     participants_ids = db.Column(db.String(500))
@@ -1589,7 +1588,7 @@ class Audit(db.Model):
                                backref='audits_que_jai_archives')
     
     # Processus
-    processus = db.relationship('Processus', backref='audits')
+    processus = db.relationship('ProcessusActivite', backref='audits')
     
     # Relations avec les autres modèles
     constatations = db.relationship('Constatation', 
