@@ -33916,7 +33916,6 @@ def maj_statut_recommandation(recommandation_id):
         flash('Statut invalide', 'error')
     
     return redirect(url_for('detail_audit', id=recommandation.audit_id))
-
 @app.route('/audit/<int:id>')
 @login_required
 def detail_audit(id):
@@ -33925,26 +33924,42 @@ def detail_audit(id):
     
     audit = Audit.query.get_or_404(id)
     
-    # Récupérer les données nécessaires
-    constatations = Constatation.query.filter_by(
-        audit_id=audit.id, 
-        is_archived=False
-    ).order_by(Constatation.created_at.desc()).all()
+    # Vérifier l'accès client
+    if not check_client_access(audit):
+        flash('Accès non autorisé à cet audit', 'error')
+        return redirect(url_for('liste_audits'))
     
-    users = User.query.all()
-    processus_list = Processus.query.all()
-    risques_list = Risque.query.filter_by(is_archived=False).all()
-    cartographies_list = Cartographie.query.all()
+    # Récupérer les données nécessaires avec filtrage client
+    constatations = get_client_filter(Constatation)\
+        .filter_by(audit_id=audit.id, is_archived=False)\
+        .order_by(Constatation.created_at.desc()).all()
+    
+    # Utilisateurs du même client
+    if current_user.role == 'super_admin':
+        users = User.query.filter_by(is_active=True).all()
+    else:
+        users = get_client_filter(User).filter_by(is_active=True).all()
+    
+    # CORRECTION : Remplacer Processus par ProcessusActivite
+    processus_list = get_client_filter(ProcessusActivite)\
+        .filter_by(is_archived=False)\
+        .order_by(ProcessusActivite.nom).all()
+    
+    risques_list = get_client_filter(Risque)\
+        .filter_by(is_archived=False).all()
+    
+    cartographies_list = get_client_filter(Cartographie)\
+        .filter_by(is_archived=False).all()
     
     # Récupérer les recommandations de l'audit
-    recommandations = Recommandation.query.filter_by(
-        audit_id=audit.id
-    ).order_by(Recommandation.created_at.desc()).all()
+    recommandations = get_client_filter(Recommandation)\
+        .filter_by(audit_id=audit.id)\
+        .order_by(Recommandation.created_at.desc()).all()
     
     # Récupérer les plans d'action de l'audit
-    plans_action = PlanAction.query.filter_by(
-        audit_id=audit.id
-    ).order_by(PlanAction.created_at.desc()).all()
+    plans_action = get_client_filter(PlanAction)\
+        .filter_by(audit_id=audit.id)\
+        .order_by(PlanAction.created_at.desc()).all()
     
     # Calculer le total des preuves
     total_preuves = 0
@@ -33966,7 +33981,7 @@ def detail_audit(id):
     for constatation in audit.constatations:
         if constatation.risque_id and constatation.risque_id not in risques_ids_vus:
             risque = Risque.query.get(constatation.risque_id)
-            if risque:
+            if risque and check_client_access(risque):
                 # Récupérer la dernière évaluation
                 derniere_eval = None
                 if risque.evaluations:
@@ -33984,7 +33999,7 @@ def detail_audit(id):
     for recommandation in audit.recommandations:
         if recommandation.risque_id and recommandation.risque_id not in risques_ids_vus:
             risque = Risque.query.get(recommandation.risque_id)
-            if risque:
+            if risque and check_client_access(risque):
                 # Récupérer la dernière évaluation
                 derniere_eval = None
                 if risque.evaluations:
@@ -34012,7 +34027,7 @@ def detail_audit(id):
     for plan in audit.plans_action:
         if plan.risque_id and plan.risque_id not in risques_ids_vus:
             risque = Risque.query.get(plan.risque_id)
-            if risque:
+            if risque and check_client_access(risque):
                 # Récupérer la dernière évaluation
                 derniere_eval = None
                 if risque.evaluations:
@@ -34049,28 +34064,28 @@ def detail_audit(id):
     
     # Permissions basiques
     peut_modifier = (
-        current_user.role == 'admin' or
+        current_user.role == 'super_admin' or
         current_user.id == audit.created_by or
         current_user.id == audit.responsable_id or
         user_in_ids_list(audit.equipe_audit_ids)
     )
     
     peut_ajouter_constatation = (
-        current_user.role == 'admin' or
+        current_user.role == 'super_admin' or
         current_user.id == audit.created_by or
         current_user.id == audit.responsable_id or
         user_in_ids_list(audit.equipe_audit_ids)
     )
     
     peut_ajouter_recommandation = (
-        current_user.role == 'admin' or
+        current_user.role == 'super_admin' or
         current_user.id == audit.created_by or
         current_user.id == audit.responsable_id or
         user_in_ids_list(audit.equipe_audit_ids)
     )
     
     peut_generer_rapport = (
-        current_user.role == 'admin' or
+        current_user.role == 'super_admin' or
         current_user.id == audit.created_by or
         current_user.id == audit.responsable_id or
         user_in_ids_list(audit.equipe_audit_ids) or
@@ -34081,10 +34096,9 @@ def detail_audit(id):
     current_datetime = datetime.utcnow()
     
     # Récupérer les processus logigramme pour le formulaire
-    all_processus_logigramme = ProcessusActivite.query.filter_by(
-        is_archived=False,
-        created_by=current_user.id
-    ).order_by(ProcessusActivite.nom).all()
+    all_processus_logigramme = get_client_filter(ProcessusActivite)\
+        .filter_by(is_archived=False)\
+        .order_by(ProcessusActivite.nom).all()
     
     # DÉFINIR LA FONCTION get_fichier_metadata
     def get_fichier_metadata(constatation_id, filename):
@@ -34144,7 +34158,7 @@ def detail_audit(id):
         recommandations=recommandations,
         plans_action=plans_action,
         users=users,
-        processus_list=processus_list,
+        processus_list=processus_list,  # CORRIGÉ: maintenant ProcessusActivite
         all_processus_logigramme=all_processus_logigramme,  # Pour le formulaire
         risques_list=risques_list,
         cartographies_list=cartographies_list,
